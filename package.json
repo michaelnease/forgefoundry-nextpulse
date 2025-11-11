@@ -1,0 +1,28 @@
+{
+  "name": "@forged/nextpulse",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "bin": { "nextpulse": "dist/cli.js" },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.26.3",
+    "commander": "^12.0.0",
+    "concurrently": "^8.2.2",
+    "fs-extra": "^11.2.0",
+    "picocolors": "^1.0.0",
+    "recast": "^0.23.9",
+    "ts-morph": "^23.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.17.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.2"
+  }
+}

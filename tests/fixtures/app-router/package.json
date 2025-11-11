@@ -1,0 +1,7 @@
+{
+  "name": "test-app-router",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev"
+  }
+}
