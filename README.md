@@ -1,37 +1,29 @@
-# @forged/nextpulse
+## @forged/nextpulse
 
-Developer diagnostics and metadata overlay for Next.js apps. Shows app name, Next.js version, port, git branch/sha in a dev-only corner widget. Includes a CLI to inject a safe overlay that never renders in production.
+Dev overlay for Next.js that shows app name, Next version, port, git branch/sha. Ships a CLI that injects a dev-only component (no prod impact).
 
-## Quick start
+### Quickstart
 
 ```bash
 npx @forged/nextpulse init
-# or, if you cloned locally:
-pnpm dev  # during development
-pnpm build && pnpm start  # after building
+# or locally
+pnpm dev
 ```
 
-## What it does
+### What it does
 
 - Detects App Router vs Pages Router
 - Injects `<NextPulseDev />` into `app/layout.(t|j)sx` or `pages/_app.(t|j)sx`
 - Renders only when `NODE_ENV === "development"`
-- No production side effects
 
-## Config
+### Config (`nextpulse.config.json`)
 
-`nextpulse.config.json` (created on init)
+- `enabled: boolean` (default true)
+- `overlayPosition: "bottomRight" | "bottomLeft" | "topRight" | "topLeft"`
+- `openBrowserOnStart: boolean`
 
-- `enabled`: boolean (default true)
-- `overlayPosition`: "bottomRight" | "bottomLeft" | "topRight" | "topLeft"
-- `openBrowserOnStart`: boolean
+### Uninstall
 
-## Remove / uninstall
-
-1. Remove the `import { NextPulseDev } ...` line
-2. Remove `<NextPulseDev />` from the root wrapper
-3. Delete `nextpulse.config.json`
-
-## License
-
-MIT
+- Remove `import { NextPulseDev } from "@forged/nextpulse/runtime"`
+- Remove `<NextPulseDev />` from the root wrapper
+- Delete `nextpulse.config.json`

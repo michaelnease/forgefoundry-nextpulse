@@ -4,198 +4,35 @@ import type { RouterType } from "./projectDetect.js";
 
 const IMPORT_STATEMENT = 'import { NextPulseDev } from "@forged/nextpulse/runtime";';
 
-function getComponentJSX(props: {
-  appName?: string;
-  nextVersion?: string;
-  port?: string;
-  gitBranch?: string;
-  gitSha?: string;
-}): string {
-  const propsStr = Object.entries(props)
-    .filter(([_, v]) => v !== undefined && v !== null && v !== "")
-    .map(([k, v]) => {
-      // Escape quotes and use single quotes for JSX attributes
-      const escaped = String(v).replace(/'/g, "\\'").replace(/"/g, '\\"');
-      return `${k}="${escaped}"`;
-    })
-    .join(" ");
-  return `{process.env.NODE_ENV === "development" && <NextPulseDev ${propsStr} />}`;
+export function hasImport(src: string): boolean {
+  return /from\s+["']@forged\/nextpulse\/runtime["']/.test(src);
 }
 
-/**
- * Check if file already has the import
- */
-export function hasImport(content: string): boolean {
-  return content.includes('from "@forged/nextpulse/runtime"') || 
-         content.includes("from '@forged/nextpulse/runtime'");
+export function hasComponent(src: string): boolean {
+  return /<NextPulseDev\b/.test(src);
 }
 
-/**
- * Check if file already has the component JSX
- */
-export function hasComponent(content: string): boolean {
-  return content.includes("NextPulseDev") && 
-         content.includes("NODE_ENV === \"development\"");
+export function insertImport(src: string): string {
+  if (hasImport(src)) return src;
+  // Insert after last import (if any), else at top
+  const importRe = /(^|\n)(import[\s\S]*?;)(?![\s\S]*\bimport\b)/m;
+  const line = `${IMPORT_STATEMENT}\n`;
+  if (importRe.test(src)) return src.replace(importRe, (m) => m + "\n" + line);
+  return line + src;
 }
 
-/**
- * Inject import into file content
- */
-export function injectImport(content: string): string {
-  if (hasImport(content)) {
-    return content;
+export function insertComponent(src: string, router: "app" | "pages"): string {
+  if (hasComponent(src)) return src;
+  const dev = `{process.env.NODE_ENV === "development" && <NextPulseDev />}`;
+  if (router === "app") {
+    // try to place before closing </body>
+    const bodyClose = /<\/body>/i;
+    if (bodyClose.test(src)) return src.replace(bodyClose, `${dev}\n      </body>`);
   }
-
-  // Ensure content ends with newline for proper insertion
-  const needsNewline = !content.endsWith("\n");
-  const normalizedContent = needsNewline ? content + "\n" : content;
-
-  // Try to find existing imports and add after them
-  const lines = normalizedContent.split("\n");
-  let lastImportIndex = -1;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith("import ") || line.startsWith("import{")) {
-      lastImportIndex = i;
-    } else if (lastImportIndex >= 0 && line.length === 0) {
-      // Found empty line after imports
-      break;
-    }
-  }
-
-  if (lastImportIndex >= 0) {
-    lines.splice(lastImportIndex + 1, 0, IMPORT_STATEMENT);
-    return lines.join("\n");
-  }
-
-  // No imports found, add at the top
-  return IMPORT_STATEMENT + "\n" + normalizedContent;
-}
-
-/**
- * Inject component JSX into App Router layout
- */
-export function injectIntoAppLayout(content: string, props?: Record<string, string>): string {
-  if (hasComponent(content)) {
-    return content;
-  }
-
-  const componentJSX = getComponentJSX(props || {});
-
-  // Look for <body> tag and inject before closing </body>
-  const bodyCloseMatch = content.match(/<\/body>/);
-  if (bodyCloseMatch && bodyCloseMatch.index !== undefined) {
-    const insertPos = bodyCloseMatch.index;
-    const indent = getIndentBefore(content, insertPos);
-    return (
-      content.slice(0, insertPos) +
-      `\n${indent}        ${componentJSX}\n${indent}      ` +
-      content.slice(insertPos)
-    );
-  }
-
-  // Fallback: look for closing tag of root element (html, div, etc.)
-  const rootTagMatch = content.match(/<(\w+)[^>]*>[\s\S]*?<\/\1>/);
-  if (rootTagMatch) {
-    const beforeClose = content.lastIndexOf(`</${rootTagMatch[1]}>`);
-    if (beforeClose > 0) {
-      const indent = getIndentBefore(content, beforeClose);
-      return (
-        content.slice(0, beforeClose) +
-        `\n${indent}        ${componentJSX}\n${indent}      ` +
-        content.slice(beforeClose)
-      );
-    }
-  }
-
-  // Last resort: append before closing brace of return
-  const returnMatch = content.match(/return\s*\([\s\S]*?\)/);
-  if (returnMatch && returnMatch.index !== undefined) {
-    const returnEnd = returnMatch.index + returnMatch[0].length - 1;
-    const indent = getIndentBefore(content, returnEnd);
-    return (
-      content.slice(0, returnEnd) +
-      `\n${indent}        ${componentJSX}\n${indent}      ` +
-      content.slice(returnEnd)
-    );
-  }
-
-  return content;
-}
-
-/**
- * Inject component JSX into Pages Router _app
- */
-export function injectIntoPagesApp(content: string, props?: Record<string, string>): string {
-  if (hasComponent(content)) {
-    return content;
-  }
-
-  const componentJSX = getComponentJSX(props || {});
-
-  // Find <Component ... /> and add after it (inside the wrapper)
-  const componentMatch = content.match(/<Component[^/>]*\/>/);
-  if (componentMatch && componentMatch.index !== undefined) {
-    const insertPos = componentMatch.index + componentMatch[0].length;
-    const indent = getIndentBefore(content, insertPos);
-    
-    // Check if Component is wrapped in a fragment or div
-    const afterComponent = content.slice(insertPos);
-    const fragmentMatch = afterComponent.match(/^\s*<\/>/);
-    const wrapperMatch = afterComponent.match(/^\s*<\/\w+>/);
-    
-    if (fragmentMatch) {
-      // Inside fragment, add before closing </>
-      const fragmentEnd = insertPos + fragmentMatch.index!;
-      const fragmentIndent = getIndentBefore(content, fragmentEnd);
-      return (
-        content.slice(0, fragmentEnd) +
-        `\n${fragmentIndent}        ${componentJSX}\n${fragmentIndent}      ` +
-        content.slice(fragmentEnd)
-      );
-    } else if (wrapperMatch) {
-      // Inside wrapper element, add before closing tag
-      const wrapperEnd = insertPos + wrapperMatch.index!;
-      const wrapperIndent = getIndentBefore(content, wrapperEnd);
-      return (
-        content.slice(0, wrapperEnd) +
-        `\n${wrapperIndent}        ${componentJSX}\n${wrapperIndent}      ` +
-        content.slice(wrapperEnd)
-      );
-    } else {
-      // No wrapper, add after Component
-      return (
-        content.slice(0, insertPos) +
-        `\n${indent}        ${componentJSX}\n${indent}      ` +
-        content.slice(insertPos)
-      );
-    }
-  }
-
-  // Fallback: find return statement with JSX and inject inside
-  const returnMatch = content.match(/return\s*\([\s\S]*?\)/);
-  if (returnMatch && returnMatch.index !== undefined) {
-    const returnEnd = returnMatch.index + returnMatch[0].length - 1;
-    const indent = getIndentBefore(content, returnEnd);
-    return (
-      content.slice(0, returnEnd) +
-      `\n${indent}        ${componentJSX}\n${indent}      ` +
-      content.slice(returnEnd)
-    );
-  }
-
-  return content;
-}
-
-/**
- * Get indentation before a position in content
- */
-function getIndentBefore(content: string, pos: number): string {
-  const lineStart = content.lastIndexOf("\n", pos - 1) + 1;
-  const line = content.slice(lineStart, pos);
-  const match = line.match(/^(\s*)/);
-  return match ? match[1] : "";
+  // generic: append inside the returned JSX before the final ')'
+  return src.replace(/return\s*\(([\s\S]*?)\)\s*;/m, (full, inner) => {
+    return full.replace(inner, `${inner}\n    ${dev}`);
+  });
 }
 
 /**
@@ -220,15 +57,15 @@ export function injectIntoEntryFile(
 
   // Add import if not present
   if (!hasImport(content)) {
-    content = injectImport(content);
+    content = insertImport(content);
   }
 
   // Add component based on router type if not present
   if (!hasComponent(content)) {
     if (routerType === "app") {
-      content = injectIntoAppLayout(content, props);
+      content = insertComponent(content, "app");
     } else if (routerType === "pages") {
-      content = injectIntoPagesApp(content, props);
+      content = insertComponent(content, "pages");
     }
   }
 
@@ -246,7 +83,7 @@ export function createMinimalAppLayout(projectRoot: string, props?: Record<strin
     require("fs").mkdirSync(layoutDir, { recursive: true });
   }
 
-  const componentJSX = getComponentJSX(props || {});
+  const dev = `{process.env.NODE_ENV === "development" && <NextPulseDev />}`;
 
   const content = `import type { Metadata } from "next";
 ${IMPORT_STATEMENT}
@@ -265,7 +102,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
-        ${componentJSX}
+        ${dev}
       </body>
     </html>
   );
@@ -275,4 +112,3 @@ export default function RootLayout({
   writeFileSync(layoutPath, content, "utf-8");
   return layoutPath;
 }
-

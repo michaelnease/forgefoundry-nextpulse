@@ -2,6 +2,19 @@ import { existsSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { execSync } from "child_process";
 
+function safeExec(cmd: string, cwd: string): string {
+  try {
+    return execSync(cmd, {
+      cwd,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 export type RouterType = "app" | "pages" | null;
 
 export interface ProjectInfo {
@@ -64,27 +77,14 @@ export function detectRouterType(projectRoot: string): RouterType {
 /**
  * Get entry file path for the router type
  */
-export function getEntryFile(projectRoot: string, routerType: RouterType): string | null {
-  if (routerType === "app") {
-    // Prefer TSX, then TS, then JSX, then JS
-    const layoutTsx = join(projectRoot, "app", "layout.tsx");
-    const layoutTs = join(projectRoot, "app", "layout.ts");
-    const layoutJsx = join(projectRoot, "app", "layout.jsx");
-    const layoutJs = join(projectRoot, "app", "layout.js");
-    if (existsSync(layoutTsx)) return layoutTsx;
-    if (existsSync(layoutTs)) return layoutTs;
-    if (existsSync(layoutJsx)) return layoutJsx;
-    if (existsSync(layoutJs)) return layoutJs;
-  } else if (routerType === "pages") {
-    // Prefer TSX, then JSX, then TS, then JS
-    const appTsx = join(projectRoot, "pages", "_app.tsx");
-    const appJsx = join(projectRoot, "pages", "_app.jsx");
-    const appTs = join(projectRoot, "pages", "_app.ts");
-    const appJs = join(projectRoot, "pages", "_app.js");
-    if (existsSync(appTsx)) return appTsx;
-    if (existsSync(appJsx)) return appJsx;
-    if (existsSync(appTs)) return appTs;
-    if (existsSync(appJs)) return appJs;
+export function getEntryFile(root: string, router: RouterType): string | null {
+  if (router === "app") {
+    for (const c of ["app/layout.tsx", "app/layout.ts"]) {
+      if (existsSync(join(root, c))) return join(root, c);
+    }
+  }
+  for (const p of ["pages/_app.tsx", "pages/_app.js"]) {
+    if (existsSync(join(root, p))) return join(root, p);
   }
   return null;
 }
@@ -111,35 +111,12 @@ export function getNextVersion(packageJson: ProjectInfo["packageJson"]): string 
 }
 
 /**
- * Get git branch safely
+ * Get git info safely
  */
-export function getGitBranch(projectRoot: string): string | undefined {
-  try {
-    return execSync("git rev-parse --abbrev-ref HEAD", {
-      cwd: projectRoot,
-      encoding: "utf-8",
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .trim();
-  } catch {
-    return "unknown";
-  }
-}
-
-/**
- * Get git short SHA safely
- */
-export function getGitSha(projectRoot: string): string | undefined {
-  try {
-    return execSync("git rev-parse --short HEAD", {
-      cwd: projectRoot,
-      encoding: "utf-8",
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .trim();
-  } catch {
-    return "unknown";
-  }
+export function getGitInfo(root: string): { branch: string; sha: string } {
+  const branch = safeExec("git rev-parse --abbrev-ref HEAD", root);
+  const sha = safeExec("git rev-parse --short HEAD", root);
+  return { branch, sha };
 }
 
 /**
@@ -155,14 +132,15 @@ export function getPort(): string | undefined {
 export function getProjectInfo(projectRoot: string): ProjectInfo {
   const packageJson = readPackageJson(projectRoot);
   const routerType = detectRouterType(projectRoot);
+  const gitInfo = getGitInfo(projectRoot);
 
   return {
     root: projectRoot,
     routerType,
     packageJson,
     nextVersion: getNextVersion(packageJson),
-    gitBranch: getGitBranch(projectRoot),
-    gitSha: getGitSha(projectRoot),
+    gitBranch: gitInfo.branch,
+    gitSha: gitInfo.sha,
     port: getPort(),
   };
 }
