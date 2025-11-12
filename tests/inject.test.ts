@@ -39,7 +39,7 @@ export default function RootLayout({
         }
       );
 
-      expect(after).toContain('import { NextPulseDev } from "@forged/nextpulse/runtime";');
+      expect(after).toContain('import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";');
       expect(after).toContain("NextPulseDev");
       expect(after).toContain('NODE_ENV === "development"');
       expect(after).toContain('appName="my-app"');
@@ -51,7 +51,7 @@ export default function RootLayout({
     });
 
     it("should be idempotent", () => {
-      const content = `import { NextPulseDev } from "@forged/nextpulse/runtime";
+      const content = `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";
 
 export default function RootLayout({ children }) {
   return (
@@ -86,14 +86,14 @@ export default function App({ Component, pageProps }: AppProps) {
         }
       );
 
-      expect(after).toContain('import { NextPulseDev } from "@forged/nextpulse/runtime";');
+      expect(after).toContain('import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";');
       expect(after).toContain("NextPulseDev");
       expect(after).toContain('NODE_ENV === "development"');
       expect(after).toContain("<Component");
     });
 
     it("should be idempotent", () => {
-      const content = `import { NextPulseDev } from "@forged/nextpulse/runtime";
+      const content = `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";
 
 export default function App({ Component, pageProps }) {
   return (

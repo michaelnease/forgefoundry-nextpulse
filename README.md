@@ -1,11 +1,11 @@
-## @forged/nextpulse
+## @forgefoundry/nextpulse
 
 Dev overlay for Next.js that shows app name, Next version, port, git branch/sha. Ships a CLI that injects a dev-only component (no prod impact).
 
 ### Quickstart
 
 ```bash
-npx @forged/nextpulse init
+npx @forgefoundry/nextpulse init
 # or locally
 pnpm dev
 ```
@@ -24,6 +24,6 @@ pnpm dev
 
 ### Uninstall
 
-- Remove `import { NextPulseDev } from "@forged/nextpulse/runtime"`
+- Remove `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime"`
 - Remove `<NextPulseDev />` from the root wrapper
 - Delete `nextpulse.config.json`

@@ -2,10 +2,10 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import type { RouterType } from "./projectDetect.js";
 
-const IMPORT_STATEMENT = 'import { NextPulseDev } from "@forged/nextpulse/runtime";';
+const IMPORT_STATEMENT = 'import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";';
 
 export function hasImport(src: string): boolean {
-  return /from\s+["']@forged\/nextpulse\/runtime["']/.test(src);
+  return /from\s+["']@forgefoundry\/nextpulse\/runtime["']/.test(src);
 }
 
 export function hasComponent(src: string): boolean {
