@@ -1,140 +1,162 @@
 # @forged/nextpulse
 
-Developer diagnostics and metadata tools for Next.js apps.
+Developer diagnostics and metadata overlay for Next.js apps. Shows app information, framework version, git branch, and more in a dev-only corner widget.
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```bash
 npm install -g @forged/nextpulse
 ```
 
-Or use with npx:
+Or use with npx (no installation needed):
 
 ```bash
 npx @forged/nextpulse init
 ```
 
-## Commands
+### Initialize
 
-### `nextpulse init`
+Run the init command in your Next.js project root:
 
-Inject NextPulseDev into a Next.js app for dev-only runtime visibility.
-
-The init command:
-- Detects your Next.js router type (App Router or Pages Router)
-- Creates `components/nextpulse/NextPulseDev.tsx` (or `.jsx`)
-- Patches your entry file (`app/layout.tsx` or `pages/_app.tsx`) to import and render the component
-- Guards the component with `process.env.NODE_ENV === "development"` so it only runs in development
-- Adds `NEXT_PUBLIC_NEXTPULSE_PORT=4000` to `.env.local` if not already set
-- Is fully idempotent - safe to run multiple times
-
-#### Options
-
-- `--app <path>` - Path to Next.js app root (default: `.`)
-- `--dry-run` - Print planned changes without writing
-- `--revert` - Undo patches and remove NextPulseDev
-- `--with-dev-script` - Add a dev script that runs nextpulse with next dev
-
-#### Examples
-
-Initialize in current directory:
 ```bash
-npx nextpulse init
+nextpulse init
 ```
 
-Initialize with custom app path:
+This will:
+- Detect your router type (App Router or Pages Router)
+- Inject `NextPulseDev` component into your entry file (`app/layout.tsx` or `pages/_app.tsx`)
+- Create `nextpulse.config.json` with default settings
+- Make the component dev-only (only renders when `NODE_ENV === "development"`)
+
+### Options
+
 ```bash
-npx nextpulse init --app ./my-next-app
+# Specify custom app path
+nextpulse init --path ./my-app
+
+# Suppress prompts (useful for monorepos)
+nextpulse init --yes
 ```
 
-Preview changes without writing:
+## Configuration
+
+The init command creates `nextpulse.config.json` in your project root:
+
+```json
+{
+  "enabled": true,
+  "overlayPosition": "bottomRight",
+  "openBrowserOnStart": false
+}
+```
+
+### Environment Variable
+
+You can disable NextPulse via environment variable:
+
 ```bash
-npx nextpulse init --dry-run
+NEXTPULSE_ENABLED=0 npm run dev
 ```
 
-Add concurrent dev script:
-```bash
-npx nextpulse init --with-dev-script
-```
+## How It Works
 
-This modifies `package.json` to:
-- Move existing `dev` script to `dev:next`
-- Add `dev:pulse` script
-- Update `dev` to run both concurrently
+### Dev-Only Behavior
 
-Undo the init:
-```bash
-npx nextpulse init --revert
-```
+The `NextPulseDev` component is only rendered in development:
 
-## How it works
-
-### NextPulseDev Component
-
-The component fetches metadata from a local development server every 10 seconds:
-
-```typescript
-const port = process.env.NEXT_PUBLIC_NEXTPULSE_PORT || "4000";
-const url = `http://127.0.0.1:${port}/api/meta`;
-```
-
-When metadata is available, it:
-1. Dispatches a `nextpulse:meta` custom event with the metadata
-2. Logs to console with `console.debug("[nextpulse] meta", meta)`
-
-### Entry File Patching
-
-**App Router** (`app/layout.tsx`):
 ```tsx
-import NextPulseDev from "../components/nextpulse/NextPulseDev";
+{process.env.NODE_ENV === "development" && <NextPulseDev />}
+```
+
+In production builds, the component is completely excluded (tree-shaken) and has no impact on bundle size.
+
+### What It Shows
+
+The overlay widget displays:
+- App name (from `package.json`)
+- Next.js version
+- Current port
+- Git branch
+- Git short SHA
+
+All information is gathered locally - no network calls are made.
+
+## Router Support
+
+### App Router
+
+For App Router projects, the component is injected into `app/layout.tsx` (or `app/layout.ts`):
+
+```tsx
+import { NextPulseDev } from "@forged/nextpulse/runtime";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html>
       <body>
-        {process.env.NODE_ENV === "development" && <NextPulseDev />}
         {children}
+        {process.env.NODE_ENV === "development" && <NextPulseDev />}
       </body>
     </html>
   );
 }
 ```
 
-**Pages Router** (`pages/_app.tsx`):
+### Pages Router
+
+For Pages Router projects, the component is injected into `pages/_app.tsx`:
+
 ```tsx
-import NextPulseDev from "../components/nextpulse/NextPulseDev";
+import { NextPulseDev } from "@forged/nextpulse/runtime";
 
 export default function App({ Component, pageProps }) {
   return (
     <>
-      {process.env.NODE_ENV === "development" && <NextPulseDev />}
       <Component {...pageProps} />
+      {process.env.NODE_ENV === "development" && <NextPulseDev />}
     </>
   );
 }
 ```
 
-### Production Builds
+## Monorepo Support
 
-The component is completely excluded from production builds because:
-- The import and render are guarded by `process.env.NODE_ENV === "development"`
-- The component itself returns `null` and only runs effects in development
-- Next.js tree-shaking will remove it from production bundles
+If multiple Next.js apps are detected (in `apps/*` or `packages/*`), you'll be prompted to select which app to initialize:
+
+```bash
+[nextpulse] Multiple Next.js apps found:
+  1. apps/web
+  2. apps/admin
+  3. packages/ui
+
+Select app (1-3):
+```
+
+Use `--yes` to automatically select the first app without prompting.
+
+## Removing NextPulse
+
+To remove NextPulse from your project:
+
+1. Remove the import and component from your entry file (`app/layout.tsx` or `pages/_app.tsx`)
+2. Delete `nextpulse.config.json` (optional)
+3. Uninstall the package: `npm uninstall @forged/nextpulse`
+
+The init command is idempotent - running it multiple times won't duplicate imports or components.
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
-
 # Build
 npm run build
 
-# Run in development
-npm run dev
-
 # Run tests
 npm test
+
+# Development mode
+npm run dev
 ```
 
 ## License
