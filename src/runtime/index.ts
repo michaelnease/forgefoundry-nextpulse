@@ -1,2 +1,2 @@
-export { NextPulseDev } from "./NextPulseDev";
+export { NextPulseDev } from "./NextPulseDev.js";
 

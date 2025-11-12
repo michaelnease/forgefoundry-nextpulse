@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { nextpulseConfigSchema, defaultConfig, type NextPulseConfig } from "../../nextpulse.config.schema.js";
+import { nextpulseConfigSchema, defaultConfig, type NextPulseConfig } from "../nextpulse.config.schema.js";
 
 const CONFIG_FILE = "nextpulse.config.json";
 

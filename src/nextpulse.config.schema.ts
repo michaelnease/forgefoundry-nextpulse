@@ -13,4 +13,3 @@ export const defaultConfig: NextPulseConfig = {
   overlayPosition: "bottomRight",
   openBrowserOnStart: false,
 };
-
