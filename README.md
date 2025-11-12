@@ -6,14 +6,16 @@ Developer diagnostics and metadata overlay for Next.js apps. Shows app informati
 
 ### Installation
 
-```bash
-npm install -g @forged/nextpulse
-```
-
-Or use with npx (no installation needed):
+**Recommended:** Use npx (no installation needed):
 
 ```bash
 npx @forged/nextpulse init
+```
+
+**Optional:** Install globally for a `nextpulse` command:
+
+```bash
+npm install -g @forged/nextpulse
 ```
 
 ### Initialize
@@ -21,6 +23,10 @@ npx @forged/nextpulse init
 Run the init command in your Next.js project root:
 
 ```bash
+# With npx (recommended)
+npx @forged/nextpulse init
+
+# Or if installed globally
 nextpulse init
 ```
 
