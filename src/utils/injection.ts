@@ -46,8 +46,12 @@ export function injectImport(content: string): string {
     return content;
   }
 
+  // Ensure content ends with newline for proper insertion
+  const needsNewline = !content.endsWith("\n");
+  const normalizedContent = needsNewline ? content + "\n" : content;
+
   // Try to find existing imports and add after them
-  const lines = content.split("\n");
+  const lines = normalizedContent.split("\n");
   let lastImportIndex = -1;
 
   for (let i = 0; i < lines.length; i++) {
@@ -66,7 +70,7 @@ export function injectImport(content: string): string {
   }
 
   // No imports found, add at the top
-  return IMPORT_STATEMENT + "\n" + content;
+  return IMPORT_STATEMENT + "\n" + normalizedContent;
 }
 
 /**
@@ -130,19 +134,46 @@ export function injectIntoPagesApp(content: string, props?: Record<string, strin
 
   const componentJSX = getComponentJSX(props || {});
 
-  // Find <Component ... /> and add after it
+  // Find <Component ... /> and add after it (inside the wrapper)
   const componentMatch = content.match(/<Component[^/>]*\/>/);
   if (componentMatch && componentMatch.index !== undefined) {
     const insertPos = componentMatch.index + componentMatch[0].length;
     const indent = getIndentBefore(content, insertPos);
-    return (
-      content.slice(0, insertPos) +
-      `\n${indent}        ${componentJSX}\n${indent}      ` +
-      content.slice(insertPos)
-    );
+    
+    // Check if Component is wrapped in a fragment or div
+    const afterComponent = content.slice(insertPos);
+    const fragmentMatch = afterComponent.match(/^\s*<\/>/);
+    const wrapperMatch = afterComponent.match(/^\s*<\/\w+>/);
+    
+    if (fragmentMatch) {
+      // Inside fragment, add before closing </>
+      const fragmentEnd = insertPos + fragmentMatch.index!;
+      const fragmentIndent = getIndentBefore(content, fragmentEnd);
+      return (
+        content.slice(0, fragmentEnd) +
+        `\n${fragmentIndent}        ${componentJSX}\n${fragmentIndent}      ` +
+        content.slice(fragmentEnd)
+      );
+    } else if (wrapperMatch) {
+      // Inside wrapper element, add before closing tag
+      const wrapperEnd = insertPos + wrapperMatch.index!;
+      const wrapperIndent = getIndentBefore(content, wrapperEnd);
+      return (
+        content.slice(0, wrapperEnd) +
+        `\n${wrapperIndent}        ${componentJSX}\n${wrapperIndent}      ` +
+        content.slice(wrapperEnd)
+      );
+    } else {
+      // No wrapper, add after Component
+      return (
+        content.slice(0, insertPos) +
+        `\n${indent}        ${componentJSX}\n${indent}      ` +
+        content.slice(insertPos)
+      );
+    }
   }
 
-  // Fallback: find return statement with JSX
+  // Fallback: find return statement with JSX and inject inside
   const returnMatch = content.match(/return\s*\([\s\S]*?\)/);
   if (returnMatch && returnMatch.index !== undefined) {
     const returnEnd = returnMatch.index + returnMatch[0].length - 1;
@@ -169,6 +200,7 @@ function getIndentBefore(content: string, pos: number): string {
 
 /**
  * Inject NextPulseDev into entry file
+ * Idempotent: skips if both import and component already exist
  */
 export function injectIntoEntryFile(
   entryFile: string,
@@ -180,6 +212,11 @@ export function injectIntoEntryFile(
   }
 
   let content = readFileSync(entryFile, "utf-8");
+
+  // Idempotency check: if both import and component exist, skip
+  if (hasImport(content) && hasComponent(content)) {
+    return;
+  }
 
   // Add import if not present
   if (!hasImport(content)) {

@@ -63,6 +63,8 @@ export function NextPulseDev(props: NextPulseDevProps) {
 
   return (
     <div
+      role="status"
+      aria-label={`NextPulse: ${appName}, Next.js ${nextVersion}, Port ${port}, Branch ${gitBranch}`}
       style={{
         ...positionStyles[position],
         fontFamily: "system-ui, -apple-system, sans-serif",
@@ -76,6 +78,7 @@ export function NextPulseDev(props: NextPulseDevProps) {
         border: "1px solid rgba(255, 255, 255, 0.1)",
         lineHeight: "1.5",
         maxWidth: "280px",
+        pointerEvents: "none",
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: "4px", fontSize: "13px" }}>

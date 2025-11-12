@@ -142,13 +142,27 @@ Select app (1-3):
 
 Use `--yes` to automatically select the first app without prompting.
 
-## Removing NextPulse
+## Uninstalling NextPulse
 
-To remove NextPulse from your project:
+To completely remove NextPulse from your project:
 
-1. Remove the import and component from your entry file (`app/layout.tsx` or `pages/_app.tsx`)
-2. Delete `nextpulse.config.json` (optional)
-3. Uninstall the package: `npm uninstall @forged/nextpulse`
+1. **Remove the import and component** from your entry file:
+   - For App Router: Edit `app/layout.tsx` (or `app/layout.ts`) and remove:
+     - The import: `import { NextPulseDev } from "@forged/nextpulse/runtime";`
+     - The component: `{process.env.NODE_ENV === "development" && <NextPulseDev />}`
+   - For Pages Router: Edit `pages/_app.tsx` (or `pages/_app.js`) and remove the same import and component
+
+2. **Delete the config file** (optional):
+   ```bash
+   rm nextpulse.config.json
+   ```
+
+3. **Uninstall the package** (if installed locally):
+   ```bash
+   npm uninstall @forged/nextpulse
+   # or
+   pnpm remove @forged/nextpulse
+   ```
 
 The init command is idempotent - running it multiple times won't duplicate imports or components.
 

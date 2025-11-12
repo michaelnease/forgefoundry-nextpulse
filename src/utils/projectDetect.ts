@@ -66,13 +66,25 @@ export function detectRouterType(projectRoot: string): RouterType {
  */
 export function getEntryFile(projectRoot: string, routerType: RouterType): string | null {
   if (routerType === "app") {
+    // Prefer TSX, then TS, then JSX, then JS
     const layoutTsx = join(projectRoot, "app", "layout.tsx");
     const layoutTs = join(projectRoot, "app", "layout.ts");
+    const layoutJsx = join(projectRoot, "app", "layout.jsx");
+    const layoutJs = join(projectRoot, "app", "layout.js");
     if (existsSync(layoutTsx)) return layoutTsx;
     if (existsSync(layoutTs)) return layoutTs;
+    if (existsSync(layoutJsx)) return layoutJsx;
+    if (existsSync(layoutJs)) return layoutJs;
   } else if (routerType === "pages") {
+    // Prefer TSX, then JSX, then TS, then JS
     const appTsx = join(projectRoot, "pages", "_app.tsx");
+    const appJsx = join(projectRoot, "pages", "_app.jsx");
+    const appTs = join(projectRoot, "pages", "_app.ts");
+    const appJs = join(projectRoot, "pages", "_app.js");
     if (existsSync(appTsx)) return appTsx;
+    if (existsSync(appJsx)) return appJsx;
+    if (existsSync(appTs)) return appTs;
+    if (existsSync(appJs)) return appJs;
   }
   return null;
 }
@@ -110,7 +122,7 @@ export function getGitBranch(projectRoot: string): string | undefined {
     })
       .trim();
   } catch {
-    return undefined;
+    return "unknown";
   }
 }
 
@@ -126,7 +138,7 @@ export function getGitSha(projectRoot: string): string | undefined {
     })
       .trim();
   } catch {
-    return undefined;
+    return "unknown";
   }
 }
 
