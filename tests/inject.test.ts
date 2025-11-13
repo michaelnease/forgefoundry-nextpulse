@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  injectIntoAppLayout,
-  injectIntoPagesApp,
-  injectImport,
+  insertImport,
+  insertComponent,
 } from "../src/utils/injection.js";
 
 describe("injection snapshots", () => {
@@ -28,19 +27,17 @@ export default function RootLayout({
   );
 }`;
 
-      const after = injectIntoAppLayout(
-        injectImport(before),
-        {
-          appName: "my-app",
-          nextVersion: "^14.0.0",
-          port: "3000",
-          gitBranch: "main",
-          gitSha: "abc123",
-        }
-      );
+      const withImport = insertImport(before);
+      const after = insertComponent(withImport, "app", {
+        appName: "my-app",
+        nextVersion: "^14.0.0",
+        port: "3000",
+        gitBranch: "main",
+        gitSha: "abc123",
+      });
 
-      expect(after).toContain('import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";');
-      expect(after).toContain("NextPulseDev");
+      expect(after).toContain('import { NextPulse } from "@forgefoundry/nextpulse";');
+      expect(after).toContain("NextPulse");
       expect(after).toContain('NODE_ENV === "development"');
       expect(after).toContain('appName="my-app"');
       expect(after).toContain('nextVersion="^14.0.0"');
@@ -51,61 +48,64 @@ export default function RootLayout({
     });
 
     it("should be idempotent", () => {
-      const content = `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";
+      const content = `import { NextPulse } from "@forgefoundry/nextpulse/runtime";
 
 export default function RootLayout({ children }) {
   return (
     <html>
       <body>
         {children}
-        {process.env.NODE_ENV === "development" && <NextPulseDev />}
+        {process.env.NODE_ENV === "development" && <NextPulse />}
       </body>
     </html>
   );
 }`;
 
-      const result = injectIntoAppLayout(content);
-      const matches = result.match(/NextPulseDev/g);
+      const result = insertComponent(content, "app");
+      const matches = result.match(/NextPulse/g);
       expect(matches?.length).toBe(2); // One in import, one in JSX
     });
   });
 
   describe("Pages Router _app injection", () => {
     it("should inject into pages/_app.tsx", () => {
+      // Pages Router injection works when return has parentheses
       const before = `import type { AppProps } from "next/app";
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+  return (
+    <Component {...pageProps} />
+  );
 }`;
 
-      const after = injectIntoPagesApp(
-        injectImport(before),
-        {
-          appName: "my-pages-app",
-          nextVersion: "^13.5.0",
-        }
-      );
+      const withImport = insertImport(before);
+      const after = insertComponent(withImport, "pages", {
+        appName: "my-pages-app",
+        nextVersion: "^13.5.0",
+      });
 
-      expect(after).toContain('import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";');
-      expect(after).toContain("NextPulseDev");
+      expect(after).toContain('import { NextPulse } from "@forgefoundry/nextpulse";');
+      expect(after).toContain("NextPulse");
       expect(after).toContain('NODE_ENV === "development"');
       expect(after).toContain("<Component");
+      expect(after).toContain('appName="my-pages-app"');
+      expect(after).toContain('nextVersion="^13.5.0"');
     });
 
     it("should be idempotent", () => {
-      const content = `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";
+      const content = `import { NextPulse } from "@forgefoundry/nextpulse/runtime";
 
 export default function App({ Component, pageProps }) {
   return (
     <>
       <Component {...pageProps} />
-      {process.env.NODE_ENV === "development" && <NextPulseDev />}
+      {process.env.NODE_ENV === "development" && <NextPulse />}
     </>
   );
 }`;
 
-      const result = injectIntoPagesApp(content);
-      const matches = result.match(/NextPulseDev/g);
+      const result = insertComponent(content, "pages");
+      const matches = result.match(/NextPulse/g);
       expect(matches?.length).toBe(2);
     });
   });

@@ -13,7 +13,7 @@ pnpm dev
 ### What it does
 
 - Detects App Router vs Pages Router
-- Injects `<NextPulseDev />` into `app/layout.(t|j)sx` or `pages/_app.(t|j)sx`
+- Injects `<NextPulse />` into `app/layout.(t|j)sx` or `pages/_app.(t|j)sx`
 - Renders only when `NODE_ENV === "development"`
 
 ### Config (`nextpulse.config.json`)
@@ -24,6 +24,6 @@ pnpm dev
 
 ### Uninstall
 
-- Remove `import { NextPulseDev } from "@forgefoundry/nextpulse/runtime"`
-- Remove `<NextPulseDev />` from the root wrapper
+- Remove `import { NextPulse } from "@forgefoundry/nextpulse"`
+- Remove `<NextPulse />` from the root wrapper
 - Delete `nextpulse.config.json`

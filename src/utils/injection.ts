@@ -1,15 +1,15 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import type { RouterType } from "./projectDetect.js";
 
-const IMPORT_STATEMENT = 'import { NextPulseDev } from "@forgefoundry/nextpulse/runtime";';
+const IMPORT_STATEMENT = 'import { NextPulse } from "@forgefoundry/nextpulse";';
 
 export function hasImport(src: string): boolean {
-  return /from\s+["']@forgefoundry\/nextpulse\/runtime["']/.test(src);
+  return /from\s+["']@forgefoundry\/nextpulse["']/.test(src);
 }
 
 export function hasComponent(src: string): boolean {
-  return /<NextPulseDev\b/.test(src);
+  return /<NextPulse\b/.test(src);
 }
 
 export function insertImport(src: string): string {
@@ -21,9 +21,17 @@ export function insertImport(src: string): string {
   return line + src;
 }
 
-export function insertComponent(src: string, router: "app" | "pages"): string {
+export function insertComponent(src: string, router: "app" | "pages", props?: Record<string, string>): string {
   if (hasComponent(src)) return src;
-  const dev = `{process.env.NODE_ENV === "development" && <NextPulseDev />}`;
+  
+  // Build props string for JSX attributes
+  const propsStr = props && Object.keys(props).length > 0
+    ? " " + Object.entries(props)
+        .map(([key, value]) => `${key}="${value}"`)
+        .join(" ")
+    : "";
+  
+  const dev = `{process.env.NODE_ENV === "development" && <NextPulse${propsStr} />}`;
   if (router === "app") {
     // try to place before closing </body>
     const bodyClose = /<\/body>/i;
@@ -36,7 +44,7 @@ export function insertComponent(src: string, router: "app" | "pages"): string {
 }
 
 /**
- * Inject NextPulseDev into entry file
+ * Inject NextPulse into entry file
  * Idempotent: skips if both import and component already exist
  */
 export function injectIntoEntryFile(
@@ -63,9 +71,9 @@ export function injectIntoEntryFile(
   // Add component based on router type if not present
   if (!hasComponent(content)) {
     if (routerType === "app") {
-      content = insertComponent(content, "app");
+      content = insertComponent(content, "app", props);
     } else if (routerType === "pages") {
-      content = insertComponent(content, "pages");
+      content = insertComponent(content, "pages", props);
     }
   }
 
@@ -80,10 +88,17 @@ export function createMinimalAppLayout(projectRoot: string, props?: Record<strin
   const layoutDir = join(projectRoot, "app");
 
   if (!existsSync(layoutDir)) {
-    require("fs").mkdirSync(layoutDir, { recursive: true });
+    mkdirSync(layoutDir, { recursive: true });
   }
 
-  const dev = `{process.env.NODE_ENV === "development" && <NextPulseDev />}`;
+  // Build props string for JSX attributes
+  const propsStr = props && Object.keys(props).length > 0
+    ? " " + Object.entries(props)
+        .map(([key, value]) => `${key}="${value}"`)
+        .join(" ")
+    : "";
+  
+  const dev = `{process.env.NODE_ENV === "development" && <NextPulse${propsStr} />}`;
 
   const content = `import type { Metadata } from "next";
 ${IMPORT_STATEMENT}

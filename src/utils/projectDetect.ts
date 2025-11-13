@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { execSync } from "child_process";
 
@@ -155,7 +155,7 @@ export function findMonorepoApps(projectRoot: string): string[] {
 
   if (existsSync(appsDir)) {
     try {
-      const entries = require("fs").readdirSync(appsDir, { withFileTypes: true });
+      const entries = readdirSync(appsDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const appPath = join(appsDir, entry.name);
@@ -171,7 +171,7 @@ export function findMonorepoApps(projectRoot: string): string[] {
 
   if (existsSync(packagesDir)) {
     try {
-      const entries = require("fs").readdirSync(packagesDir, { withFileTypes: true });
+      const entries = readdirSync(packagesDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const appPath = join(packagesDir, entry.name);

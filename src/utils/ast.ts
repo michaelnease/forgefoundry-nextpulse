@@ -66,7 +66,7 @@ export function patchAppRouterLayout(code: string, importPath: string): PatchRes
         node.type === "ImportDeclaration" &&
         node.source.value === importPath &&
         node.specifiers.some(
-          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulseDev"
+          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulse"
         )
       ) {
         alreadyHasImport = true;
@@ -80,7 +80,7 @@ export function patchAppRouterLayout(code: string, importPath: string): PatchRes
         specifiers: [
           {
             type: "ImportDefaultSpecifier",
-            local: { type: "Identifier", name: "NextPulseDev" },
+            local: { type: "Identifier", name: "NextPulse" },
           },
         ],
         source: { type: "Literal", value: importPath },
@@ -98,17 +98,17 @@ export function patchAppRouterLayout(code: string, importPath: string): PatchRes
         node.type === "JSXElement" &&
         node.openingElement?.name?.name === "body"
       ) {
-        // Check if NextPulseDev is already present
-        const hasNextPulseDev = node.children?.some((child: any) => {
+        // Check if NextPulse is already present
+        const hasNextPulse = node.children?.some((child: any) => {
           return (
             child.type === "JSXExpressionContainer" &&
             child.expression?.type === "LogicalExpression" &&
             child.expression?.right?.type === "JSXElement" &&
-            child.expression?.right?.openingElement?.name?.name === "NextPulseDev"
+            child.expression?.right?.openingElement?.name?.name === "NextPulse"
           );
         });
 
-        if (hasNextPulseDev) {
+        if (hasNextPulse) {
           alreadyHasJsx = true;
           return true;
         }
@@ -147,7 +147,7 @@ export function patchAppRouterLayout(code: string, importPath: string): PatchRes
                 type: "JSXElement",
                 openingElement: {
                   type: "JSXOpeningElement",
-                  name: { type: "JSXIdentifier", name: "NextPulseDev" },
+                  name: { type: "JSXIdentifier", name: "NextPulse" },
                   selfClosing: true,
                   attributes: [],
                 },
@@ -209,7 +209,7 @@ export function patchPagesRouterApp(code: string, importPath: string): PatchResu
         node.type === "ImportDeclaration" &&
         node.source.value === importPath &&
         node.specifiers.some(
-          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulseDev"
+          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulse"
         )
       ) {
         alreadyHasImport = true;
@@ -223,7 +223,7 @@ export function patchPagesRouterApp(code: string, importPath: string): PatchResu
         specifiers: [
           {
             type: "ImportDefaultSpecifier",
-            local: { type: "Identifier", name: "NextPulseDev" },
+            local: { type: "Identifier", name: "NextPulse" },
           },
         ],
         source: { type: "Literal", value: importPath },
@@ -238,18 +238,18 @@ export function patchPagesRouterApp(code: string, importPath: string): PatchResu
 
       // Look for return statement with JSX
       if (node.type === "ReturnStatement" && node.argument) {
-        // Check if already has NextPulseDev
+        // Check if already has NextPulse
         if (node.argument.type === "JSXFragment") {
-          const hasNextPulseDev = node.argument.children?.some((child: any) => {
+          const hasNextPulse = node.argument.children?.some((child: any) => {
             return (
               child.type === "JSXExpressionContainer" &&
               child.expression?.type === "LogicalExpression" &&
               child.expression?.right?.type === "JSXElement" &&
-              child.expression?.right?.openingElement?.name?.name === "NextPulseDev"
+              child.expression?.right?.openingElement?.name?.name === "NextPulse"
             );
           });
 
-          if (hasNextPulseDev) {
+          if (hasNextPulse) {
             alreadyHasJsx = true;
             return true;
           }
@@ -278,7 +278,7 @@ export function patchPagesRouterApp(code: string, importPath: string): PatchResu
                 type: "JSXElement",
                 openingElement: {
                   type: "JSXOpeningElement",
-                  name: { type: "JSXIdentifier", name: "NextPulseDev" },
+                  name: { type: "JSXIdentifier", name: "NextPulse" },
                   selfClosing: true,
                   attributes: [],
                 },
@@ -317,7 +317,7 @@ export function patchPagesRouterApp(code: string, importPath: string): PatchResu
                 type: "JSXElement",
                 openingElement: {
                   type: "JSXOpeningElement",
-                  name: { type: "JSXIdentifier", name: "NextPulseDev" },
+                  name: { type: "JSXIdentifier", name: "NextPulse" },
                   selfClosing: true,
                   attributes: [],
                 },
@@ -382,7 +382,7 @@ export function revertAppRouterLayout(code: string, importPath: string): PatchRe
         node.type === "ImportDeclaration" &&
         node.source.value === importPath &&
         node.specifiers.some(
-          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulseDev"
+          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulse"
         )
       ) {
         importRemoved = true;
@@ -406,7 +406,7 @@ export function revertAppRouterLayout(code: string, importPath: string): PatchRe
               child.type === "JSXExpressionContainer" &&
               child.expression?.type === "LogicalExpression" &&
               child.expression?.right?.type === "JSXElement" &&
-              child.expression?.right?.openingElement?.name?.name === "NextPulseDev"
+              child.expression?.right?.openingElement?.name?.name === "NextPulse"
             );
           });
           if (node.children.length < originalLength) {
@@ -455,7 +455,7 @@ export function revertPagesRouterApp(code: string, importPath: string): PatchRes
         node.type === "ImportDeclaration" &&
         node.source.value === importPath &&
         node.specifiers.some(
-          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulseDev"
+          (s: any) => s.type === "ImportDefaultSpecifier" && s.local.name === "NextPulse"
         )
       ) {
         importRemoved = true;
@@ -476,7 +476,7 @@ export function revertPagesRouterApp(code: string, importPath: string): PatchRes
               child.type === "JSXExpressionContainer" &&
               child.expression?.type === "LogicalExpression" &&
               child.expression?.right?.type === "JSXElement" &&
-              child.expression?.right?.openingElement?.name?.name === "NextPulseDev"
+              child.expression?.right?.openingElement?.name?.name === "NextPulse"
             );
           });
           const newLength = node.argument.children?.length || 0;

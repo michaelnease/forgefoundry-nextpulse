@@ -69,25 +69,24 @@ export default function App({ Component, pageProps }: AppProps) {
 
       await initCommand({ app: tempDir });
 
-      // Check component was created
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.tsx");
-      expect(await fs.pathExists(componentPath)).toBe(true);
+      // Check NO component was created in user's project
+      const componentPath = path.join(tempDir, "components/nextpulse/NextPulse.tsx");
+      expect(await fs.pathExists(componentPath)).toBe(false);
 
-      const componentContent = await fs.readFile(componentPath, "utf-8");
-      expect(componentContent).toContain('"use client"');
-      expect(componentContent).toContain("export default function NextPulseDev()");
-
-      // Check layout was patched
+      // Check layout was patched with package import
       const layoutPath = path.join(tempDir, "app/layout.tsx");
       const layoutContent = await fs.readFile(layoutPath, "utf-8");
-      expect(layoutContent).toContain('import NextPulseDev from "../components/nextpulse/NextPulseDev"');
+      expect(layoutContent).toContain('import { NextPulse } from "@forgefoundry/nextpulse"');
       expect(layoutContent).toContain('process.env.NODE_ENV === "development"');
-      expect(layoutContent).toContain("<NextPulseDev />");
+      expect(layoutContent).toContain("<NextPulse />");
 
-      // Check env was created
-      const envPath = path.join(tempDir, ".env.local");
-      const envContent = await fs.readFile(envPath, "utf-8");
-      expect(envContent).toContain("NEXT_PUBLIC_NEXTPULSE_PORT=4000");
+      // Check .nextpulse/metadata.json was created
+      const metadataPath = path.join(tempDir, ".nextpulse/metadata.json");
+      expect(await fs.pathExists(metadataPath)).toBe(true);
+
+      // Check API routes were created
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/config/route.ts"))).toBe(true);
     });
 
     it("should be idempotent on re-run", async () => {
@@ -106,8 +105,8 @@ export default function App({ Component, pageProps }: AppProps) {
       expect(secondContent).toBe(firstContent);
 
       // Check no duplicate imports or JSX
-      const importCount = (secondContent.match(/import NextPulseDev/g) || []).length;
-      const jsxCount = (secondContent.match(/<NextPulseDev \/>/g) || []).length;
+      const importCount = (secondContent.match(/import\s+\{\s*NextPulse\s*\}/g) || []).length;
+      const jsxCount = (secondContent.match(/<NextPulse\s*\/>/g) || []).length;
       expect(importCount).toBe(1);
       expect(jsxCount).toBe(1);
     });
@@ -118,12 +117,12 @@ export default function App({ Component, pageProps }: AppProps) {
       await initCommand({ app: tempDir, dryRun: true });
 
       // Nothing should be written
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.tsx");
+      const componentPath = path.join(tempDir, "components/nextpulse/NextPulse.tsx");
       expect(await fs.pathExists(componentPath)).toBe(false);
 
       const layoutPath = path.join(tempDir, "app/layout.tsx");
       const layoutContent = await fs.readFile(layoutPath, "utf-8");
-      expect(layoutContent).not.toContain("NextPulseDev");
+      expect(layoutContent).not.toContain("NextPulse");
     });
 
     it("should support --revert", async () => {
@@ -132,21 +131,23 @@ export default function App({ Component, pageProps }: AppProps) {
       // Init
       await initCommand({ app: tempDir });
 
-      // Verify it was added
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.tsx");
-      expect(await fs.pathExists(componentPath)).toBe(true);
+      // Verify metadata and API routes were added
+      const metadataPath = path.join(tempDir, ".nextpulse/metadata.json");
+      expect(await fs.pathExists(metadataPath)).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(true);
 
       // Revert
       await initCommand({ app: tempDir, revert: true });
 
-      // Component should be removed
-      expect(await fs.pathExists(componentPath)).toBe(false);
+      // Metadata and API routes should be removed
+      expect(await fs.pathExists(metadataPath)).toBe(false);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(false);
 
       // Layout should be clean
       const layoutPath = path.join(tempDir, "app/layout.tsx");
       const layoutContent = await fs.readFile(layoutPath, "utf-8");
-      expect(layoutContent).not.toContain("NextPulseDev");
-      expect(layoutContent).not.toContain('import NextPulseDev');
+      expect(layoutContent).not.toContain("NextPulse");
+      expect(layoutContent).not.toContain('import { NextPulse }');
     });
 
     it("should work with .jsx extension", async () => {
@@ -154,14 +155,10 @@ export default function App({ Component, pageProps }: AppProps) {
 
       await initCommand({ app: tempDir });
 
-      // Component should be .jsx
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.jsx");
-      expect(await fs.pathExists(componentPath)).toBe(true);
-
-      // Layout should be patched
+      // Layout should be patched with package import
       const layoutPath = path.join(tempDir, "app/layout.jsx");
       const layoutContent = await fs.readFile(layoutPath, "utf-8");
-      expect(layoutContent).toContain('import NextPulseDev from "../components/nextpulse/NextPulseDev"');
+      expect(layoutContent).toContain('import { NextPulse } from "@forgefoundry/nextpulse"');
     });
 
     it("should update package.json with --with-dev-script", async () => {
@@ -185,16 +182,20 @@ export default function App({ Component, pageProps }: AppProps) {
 
       await initCommand({ app: tempDir });
 
-      // Check component was created
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.tsx");
-      expect(await fs.pathExists(componentPath)).toBe(true);
+      // Check NO component was created in user's project
+      const componentPath = path.join(tempDir, "components/nextpulse/NextPulse.tsx");
+      expect(await fs.pathExists(componentPath)).toBe(false);
 
-      // Check _app was patched
+      // Check _app was patched with package import
       const appPath = path.join(tempDir, "pages/_app.tsx");
       const appContent = await fs.readFile(appPath, "utf-8");
-      expect(appContent).toContain('import NextPulseDev from "../components/nextpulse/NextPulseDev"');
+      expect(appContent).toContain('import { NextPulse } from "@forgefoundry/nextpulse"');
       expect(appContent).toContain('process.env.NODE_ENV === "development"');
-      expect(appContent).toContain("<NextPulseDev />");
+      expect(appContent).toContain("<NextPulse />");
+
+      // Check API routes were created
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/metadata.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/config.ts"))).toBe(true);
     });
 
     it("should be idempotent on re-run", async () => {
@@ -213,8 +214,8 @@ export default function App({ Component, pageProps }: AppProps) {
       expect(secondContent).toBe(firstContent);
 
       // Check no duplicate imports or JSX
-      const importCount = (secondContent.match(/import NextPulseDev/g) || []).length;
-      const jsxCount = (secondContent.match(/<NextPulseDev \/>/g) || []).length;
+      const importCount = (secondContent.match(/import\s+\{\s*NextPulse\s*\}/g) || []).length;
+      const jsxCount = (secondContent.match(/<NextPulse\s*\/>/g) || []).length;
       expect(importCount).toBe(1);
       expect(jsxCount).toBe(1);
     });
@@ -229,38 +230,25 @@ export default function App({ Component, pageProps }: AppProps) {
       await initCommand({ app: tempDir, revert: true });
 
       // Component should be removed
-      const componentPath = path.join(tempDir, "components/nextpulse/NextPulseDev.tsx");
+      const componentPath = path.join(tempDir, "components/nextpulse/NextPulse.tsx");
       expect(await fs.pathExists(componentPath)).toBe(false);
 
       // _app should be clean
       const appPath = path.join(tempDir, "pages/_app.tsx");
       const appContent = await fs.readFile(appPath, "utf-8");
-      expect(appContent).not.toContain("NextPulseDev");
+      expect(appContent).not.toContain("NextPulse");
     });
   });
 
   describe("Environment", () => {
-    it("should append to existing .env.local if port not set", async () => {
+    it("should not create .env.local (deprecated)", async () => {
       await setupAppRouter();
       const envPath = path.join(tempDir, ".env.local");
-      await fs.writeFile(envPath, "SOME_VAR=value\n", "utf-8");
 
       await initCommand({ app: tempDir });
 
-      const envContent = await fs.readFile(envPath, "utf-8");
-      expect(envContent).toContain("SOME_VAR=value");
-      expect(envContent).toContain("NEXT_PUBLIC_NEXTPULSE_PORT=4000");
-    });
-
-    it("should not duplicate port if already set", async () => {
-      await setupAppRouter();
-      const envPath = path.join(tempDir, ".env.local");
-      await fs.writeFile(envPath, "NEXT_PUBLIC_NEXTPULSE_PORT=5000\n", "utf-8");
-
-      await initCommand({ app: tempDir });
-
-      const envContent = await fs.readFile(envPath, "utf-8");
-      expect(envContent).toBe("NEXT_PUBLIC_NEXTPULSE_PORT=5000\n");
+      // .env.local is no longer created by init
+      expect(await fs.pathExists(envPath)).toBe(false);
     });
   });
 

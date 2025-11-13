@@ -26,7 +26,7 @@ describe("injection", () => {
   describe("component injection", () => {
     it("injects component inside return", () => {
       const withComp = insertComponent(pagesApp, "pages");
-      expect(withComp).toMatch(/NextPulseDev/);
+      expect(withComp).toMatch(/NextPulse/);
       expect(withComp).toMatch(/NODE_ENV === "development"/);
     });
 
@@ -41,7 +41,7 @@ describe("injection", () => {
   );
 }`;
       const withComp = insertComponent(appLayout, "app");
-      expect(withComp).toMatch(/NextPulseDev/);
+      expect(withComp).toMatch(/NextPulse/);
       expect(withComp).toMatch(/<\/body>/);
     });
   });
