@@ -27,7 +27,9 @@
   "exports": {
     ".": {
       "types": "./dist/runtime/index.d.ts",
+      "react-server": "./dist/runtime/index.js",
       "import": "./dist/runtime/index.js",
+      "require": "./dist/runtime/index.js",
       "default": "./dist/runtime/index.js"
     },
     "./runtime": {
@@ -50,6 +52,11 @@
       "types": "./dist/diagnostics/index.d.ts",
       "import": "./dist/diagnostics/index.js",
       "default": "./dist/diagnostics/index.js"
+    },
+    "./diagnostics/overlayView": {
+      "types": "./dist/diagnostics/overlayView.d.ts",
+      "import": "./dist/diagnostics/overlayView.js",
+      "default": "./dist/diagnostics/overlayView.js"
     },
     "./package.json": "./package.json"
   },

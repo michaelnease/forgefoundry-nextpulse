@@ -154,12 +154,19 @@ export const API_RUNTIME_ROUTE_TEMPLATE = `/**
  */
 
 import { NextResponse } from "next/server";
-import { getRuntimeSnapshot } from "@forgefoundry/nextpulse/instrumentation";
+import { getRuntimeSnapshot, beginSession } from "@forgefoundry/nextpulse/instrumentation";
 
 export async function GET() {
   try {
+    // Ensure a session exists (if none exists)
     const snapshot = getRuntimeSnapshot();
-    return NextResponse.json(snapshot);
+    if (snapshot.sessions.length === 0 || !snapshot.activeSessionId) {
+      // Create a default session for the API route
+      beginSession("/api/nextpulse/runtime");
+    }
+    
+    const updatedSnapshot = getRuntimeSnapshot();
+    return NextResponse.json(updatedSnapshot);
   } catch (error) {
     console.error("[nextpulse] Failed to get runtime snapshot:", error);
     return NextResponse.json(
@@ -181,7 +188,7 @@ export const API_BUNDLES_ROUTE_TEMPLATE = `/**
  */
 
 import { NextResponse } from "next/server";
-import { scanBundles } from "@forgefoundry/nextpulse/instrumentation";
+import { scanBundles } from "@forgefoundry/nextpulse/server";
 
 export async function GET() {
   try {
@@ -270,7 +277,7 @@ export const PAGES_API_BUNDLES_ROUTE_TEMPLATE = `/**
  */
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { scanBundles } from "@forgefoundry/nextpulse/instrumentation";
+import { scanBundles } from "@forgefoundry/nextpulse/server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {

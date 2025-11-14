@@ -563,6 +563,74 @@ interface FetchEvent {
 }
 ```
 
+#### `ServerActionEvent`
+
+```typescript
+interface ServerActionEvent {
+  id: string;
+  name: string;
+  file: string | null;
+  route: string | null;
+  executionTimeMs: number;
+  status: 'success' | 'error';
+  errorMessage?: string;
+  errorStack?: string;
+  startedAt: number;
+  finishedAt: number;
+}
+```
+
+#### `RscRenderEvent`
+
+```typescript
+interface RscRenderEvent {
+  id: string;
+  file: string | null;
+  componentName: string | null;
+  route: string | null;
+  durationMs: number;
+  startedAt: number;
+  finishedAt: number;
+  isAsync: boolean;
+}
+```
+
+#### `SuspenseEvent`
+
+```typescript
+interface SuspenseEvent {
+  id: string;
+  boundaryName: string | null;
+  route: string | null;
+  startedAt: number;
+  resolvedAt: number;
+  fallbackRenderMs: number;
+  contentResolveMs: number;
+}
+```
+
+#### `StreamingEvent`
+
+```typescript
+interface StreamingEvent {
+  id: string;
+  route: string | null;
+  phase: 'shell' | 'data' | 'content' | 'complete';
+  timestamp: number;
+}
+```
+
+#### `PerformanceTimelineEntry`
+
+```typescript
+interface PerformanceTimelineEntry {
+  type: 'rsc' | 'suspense' | 'streaming' | 'fetch' | 'action';
+  timestamp: number;
+  durationMs?: number;
+  refId?: string;
+}
+```
+
 #### `ErrorEvent`
 
 ```typescript

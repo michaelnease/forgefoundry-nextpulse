@@ -11,10 +11,13 @@ import { loadMetadata } from "./loadMetadata.js";
 import { readConfig } from "../utils/config.js";
 import { scanAllRoutes } from "./routesScanner.js";
 import { getRuntimeSnapshot } from "../instrumentation/sessions.js";
-import { buildDiagnosticsSnapshot } from "../diagnostics/index.js";
+import { buildDiagnosticsSnapshot, buildPerformanceSnapshot } from "../diagnostics/index.js";
 import { scanBundles } from "./bundleScanner.js";
 import { getErrorLogSnapshot, clearErrorsAndLogs } from "../instrumentation/errors.js";
 import { generateDiagnosticSnapshot } from "./snapshot.js";
+import { fetchAppRuntimeSnapshot, fetchAppBundles, fetchAppErrors } from "./appRuntimeClient.js";
+import { sseManager } from "./sseManager.js";
+import { ChangeDetector } from "./changeDetector.js";
 import pc from "picocolors";
 
 export interface ServerOptions {
@@ -410,13 +413,46 @@ function getDashboardHTML(): string {
     let isOpen = false;
     let routesData = null;
     let runtimeData = null;
-    let runtimeInterval = null;
+    let runtimeEventSource = null;
     let performanceData = null;
-    let performanceInterval = null;
+    let performanceEventSource = null;
     let bundlesData = null;
-    let bundlesInterval = null;
+    let bundlesInterval = null; // Keep polling for bundles (less frequent updates)
     let errorsData = null;
-    let errorsInterval = null;
+    let errorsEventSource = null;
+
+    // SSE Connection Manager
+    function connectSSE(url, onUpdate, onError) {
+      const eventSource = new EventSource(url);
+
+      eventSource.addEventListener('connected', (e) => {
+        const data = JSON.parse(e.data);
+        console.log('[SSE] Connected:', data.clientId);
+      });
+
+      eventSource.addEventListener('update', (e) => {
+        const data = JSON.parse(e.data);
+        onUpdate(data);
+      });
+
+      eventSource.addEventListener('ping', () => {
+        // Keep-alive ping, no action needed
+      });
+
+      eventSource.onerror = (err) => {
+        console.error('[SSE] Connection error:', err);
+        if (onError) onError(err);
+      };
+
+      return eventSource;
+    }
+
+    function disconnectSSE(eventSource) {
+      if (eventSource) {
+        eventSource.close();
+      }
+      return null;
+    }
     
     // Tab switching
     tabs.forEach(tab => {
@@ -432,101 +468,75 @@ function getDashboardHTML(): string {
         }
         if (tabName === 'runtime') {
           loadRuntime();
-          // Start auto-refresh
-          if (runtimeInterval) clearInterval(runtimeInterval);
-          runtimeInterval = setInterval(loadRuntime, 1000);
-          // Stop performance refresh
-          if (performanceInterval) {
-            clearInterval(performanceInterval);
-            performanceInterval = null;
+          // Start SSE for runtime updates
+          if (!runtimeEventSource) {
+            runtimeEventSource = connectSSE('/api/runtime/stream', (data) => {
+              runtimeData = data;
+              renderRuntime(data);
+            });
           }
+          // Stop other streams
+          performanceEventSource = disconnectSSE(performanceEventSource);
+          errorsEventSource = disconnectSSE(errorsEventSource);
         } else if (tabName === 'performance') {
           loadPerformance();
-          // Start auto-refresh
-          if (performanceInterval) clearInterval(performanceInterval);
-          performanceInterval = setInterval(loadPerformance, 1000);
-          // Stop other refreshes
-          if (runtimeInterval) {
-            clearInterval(runtimeInterval);
-            runtimeInterval = null;
+          // Start SSE for performance updates
+          if (!performanceEventSource) {
+            performanceEventSource = connectSSE('/api/performance/stream', (data) => {
+              performanceData = data;
+              renderPerformance(data);
+            });
           }
+          // Stop other streams
+          runtimeEventSource = disconnectSSE(runtimeEventSource);
+          errorsEventSource = disconnectSSE(errorsEventSource);
           if (bundlesInterval) {
             clearInterval(bundlesInterval);
             bundlesInterval = null;
           }
         } else if (tabName === 'bundles') {
           loadBundles();
-          // Start auto-refresh
+          // Start polling for bundles (less frequent updates)
           if (bundlesInterval) clearInterval(bundlesInterval);
           bundlesInterval = setInterval(loadBundles, 3000);
-          // Stop other refreshes
-          if (runtimeInterval) {
-            clearInterval(runtimeInterval);
-            runtimeInterval = null;
-          }
-          if (performanceInterval) {
-            clearInterval(performanceInterval);
-            performanceInterval = null;
-          }
-          if (errorsInterval) {
-            clearInterval(errorsInterval);
-            errorsInterval = null;
-          }
+          // Stop SSE streams
+          runtimeEventSource = disconnectSSE(runtimeEventSource);
+          performanceEventSource = disconnectSSE(performanceEventSource);
+          errorsEventSource = disconnectSSE(errorsEventSource);
         } else if (tabName === 'errors') {
           loadErrors();
-          // Start auto-refresh
-          if (errorsInterval) clearInterval(errorsInterval);
-          errorsInterval = setInterval(loadErrors, 1000);
-          // Stop other refreshes
-          if (runtimeInterval) {
-            clearInterval(runtimeInterval);
-            runtimeInterval = null;
+          // Start SSE for error updates
+          if (!errorsEventSource) {
+            errorsEventSource = connectSSE('/api/errors/stream', (data) => {
+              errorsData = data;
+              renderErrors(data);
+            });
           }
-          if (performanceInterval) {
-            clearInterval(performanceInterval);
-            performanceInterval = null;
-          }
+          // Stop other streams
+          runtimeEventSource = disconnectSSE(runtimeEventSource);
+          performanceEventSource = disconnectSSE(performanceEventSource);
           if (bundlesInterval) {
             clearInterval(bundlesInterval);
             bundlesInterval = null;
           }
         } else if (tabName === 'snapshot') {
           loadSnapshot();
-          // No auto-refresh for snapshot
-          // Stop other refreshes
-          if (runtimeInterval) {
-            clearInterval(runtimeInterval);
-            runtimeInterval = null;
-          }
-          if (performanceInterval) {
-            clearInterval(performanceInterval);
-            performanceInterval = null;
-          }
+          // Stop all auto-refresh
+          runtimeEventSource = disconnectSSE(runtimeEventSource);
+          performanceEventSource = disconnectSSE(performanceEventSource);
+          errorsEventSource = disconnectSSE(errorsEventSource);
           if (bundlesInterval) {
             clearInterval(bundlesInterval);
             bundlesInterval = null;
-          }
-          if (errorsInterval) {
-            clearInterval(errorsInterval);
-            errorsInterval = null;
           }
         } else {
-          // Stop auto-refresh when switching away
-          if (runtimeInterval) {
-            clearInterval(runtimeInterval);
-            runtimeInterval = null;
-          }
-          if (performanceInterval) {
-            clearInterval(performanceInterval);
-            performanceInterval = null;
-          }
+          // Stop all auto-refresh when switching away
+          runtimeEventSource = disconnectSSE(runtimeEventSource);
+          performanceEventSource = disconnectSSE(performanceEventSource);
+          errorsEventSource = disconnectSSE(errorsEventSource);
           if (bundlesInterval) {
             clearInterval(bundlesInterval);
             bundlesInterval = null;
-          }
-          if (errorsInterval) {
-            clearInterval(errorsInterval);
-            errorsInterval = null;
           }
         }
       });
@@ -769,10 +779,22 @@ function getDashboardHTML(): string {
     async function loadRuntime() {
       try {
         const response = await fetch('/api/runtime');
+        const data = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Failed to load runtime data');
+          // Check if it's an "app unreachable" error
+          if (data.error === 'next_app_unreachable') {
+            runtimeContent.innerHTML = \`<div style="text-align: center; color: var(--np-text); padding: 40px;">
+              <p style="margin-bottom: 12px; font-weight: 600;">Next.js dev server not reachable</p>
+              <p style="font-size: 13px; color: var(--np-text);">\${escapeHtml(data.message)}</p>
+              <p style="font-size: 12px; color: var(--np-text); margin-top: 16px;">Make sure <code>next dev</code> is running and <code>nextDevBaseUrl</code> in <code>nextpulse.config.json</code> is correct.</p>
+            </div>\`;
+            return;
+          }
+          throw new Error(data.message || 'Failed to load runtime data');
         }
-        runtimeData = await response.json();
+        
+        runtimeData = data;
         renderRuntime(runtimeData);
       } catch (err) {
         runtimeContent.innerHTML = \`<div class="error">Failed to load runtime data: \${err.message || 'Unknown error'}</div>\`;
@@ -780,6 +802,12 @@ function getDashboardHTML(): string {
     }
     
     function renderRuntime(snapshot) {
+      // Check if snapshot has sessions
+      if (!snapshot || !snapshot.sessions || snapshot.sessions.length === 0) {
+        runtimeContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">Waiting for data... Open your app in another tab and generate some traffic.</div>';
+        return;
+      }
+      
       const activeSession = snapshot.activeSessionId
         ? snapshot.sessions.find(s => s.id === snapshot.activeSessionId)
         : null;
@@ -881,10 +909,22 @@ function getDashboardHTML(): string {
     async function loadPerformance() {
       try {
         const response = await fetch('/api/performance');
+        const data = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Failed to load performance data');
+          // Check if it's an "app unreachable" error
+          if (data.error === 'next_app_unreachable') {
+            performanceContent.innerHTML = \`<div style="text-align: center; color: var(--np-text); padding: 40px;">
+              <p style="margin-bottom: 12px; font-weight: 600;">Next.js dev server not reachable</p>
+              <p style="font-size: 13px; color: var(--np-text);">\${escapeHtml(data.message)}</p>
+              <p style="font-size: 12px; color: var(--np-text); margin-top: 16px;">Make sure <code>next dev</code> is running and <code>nextDevBaseUrl</code> in <code>nextpulse.config.json</code> is correct.</p>
+            </div>\`;
+            return;
+          }
+          throw new Error(data.message || 'Failed to load performance data');
         }
-        performanceData = await response.json();
+        
+        performanceData = data;
         renderPerformance(performanceData);
       } catch (err) {
         performanceContent.innerHTML = \`<div class="error">Failed to load performance data: \${err.message || 'Unknown error'}</div>\`;
@@ -892,6 +932,11 @@ function getDashboardHTML(): string {
     }
     
     function renderPerformance(data) {
+      if (!data || !data.sessions || data.sessions.length === 0) {
+        performanceContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">Waiting for data... Open your app in another tab and generate some traffic.</div>';
+        return;
+      }
+      
       const activeSession = data.activeSessionId
         ? data.sessions.find(s => s.id === data.activeSessionId)
         : null;
@@ -1339,6 +1384,9 @@ async function handleRequest(
   res: ServerResponse,
   projectRoot: string
 ): Promise<void> {
+  // Load config to get nextDevBaseUrl
+  const config = readConfig(projectRoot);
+  const nextDevBaseUrl = config.nextDevBaseUrl || "http://localhost:3000";
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
   // Set CORS headers
@@ -1413,13 +1461,40 @@ async function handleRequest(
     return;
   }
 
-  // Runtime endpoint
+  // SSE Stream: Runtime data stream
+  if (url.pathname === "/api/runtime/stream") {
+    sseManager.addClient(res, ["runtime"]);
+    // Connection stays open, response is handled by SSE manager
+    return;
+  }
+
+  // SSE Stream: Performance data stream
+  if (url.pathname === "/api/performance/stream") {
+    sseManager.addClient(res, ["performance"]);
+    // Connection stays open, response is handled by SSE manager
+    return;
+  }
+
+  // SSE Stream: Errors data stream
+  if (url.pathname === "/api/errors/stream") {
+    sseManager.addClient(res, ["errors"]);
+    // Connection stays open, response is handled by SSE manager
+    return;
+  }
+
+  // Runtime endpoint - fetch from Next.js app, fallback to local
   if (url.pathname === "/api/runtime") {
     try {
-      const snapshot = getRuntimeSnapshot();
-      // Return raw runtime snapshot (timelines will be built on-demand by consumers)
+      const appRuntime = await fetchAppRuntimeSnapshot(nextDevBaseUrl);
+      if (appRuntime) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(appRuntime));
+        return;
+      }
+      // App not reachable - fallback to local runtime snapshot
+      const localRuntime = getRuntimeSnapshot();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(snapshot));
+      res.end(JSON.stringify(localRuntime));
     } catch (error: any) {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(
@@ -1432,13 +1507,20 @@ async function handleRequest(
     return;
   }
 
-  // Performance endpoint
+  // Performance endpoint - fetch runtime from Next.js app and build performance from it, fallback to local
   if (url.pathname === "/api/performance") {
     try {
-      // Use shared diagnostics module to get performance snapshot
-      const diagnosticsSnapshot = buildDiagnosticsSnapshot(projectRoot);
-      const performance = diagnosticsSnapshot.performance;
-
+      const appRuntime = await fetchAppRuntimeSnapshot(nextDevBaseUrl);
+      if (appRuntime) {
+        // Build performance snapshot from the app's runtime data
+        const performance = buildPerformanceSnapshot(appRuntime);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(performance));
+        return;
+      }
+      // App not reachable - fallback to local runtime snapshot
+      const localRuntime = getRuntimeSnapshot();
+      const performance = buildPerformanceSnapshot(localRuntime);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(performance));
     } catch (error: any) {
@@ -1453,9 +1535,17 @@ async function handleRequest(
     return;
   }
 
-  // Bundles endpoint
+  // Bundles endpoint - fetch from Next.js app if available, otherwise scan locally
   if (url.pathname === "/api/bundles") {
     try {
+      // Try to fetch from Next.js app first
+      const appBundles = await fetchAppBundles(nextDevBaseUrl);
+      if (appBundles) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(appBundles));
+        return;
+      }
+      // Fallback to local scan
       const bundles = scanBundles(projectRoot);
       if (!bundles) {
         res.writeHead(404, { "Content-Type": "application/json" });
@@ -1481,16 +1571,25 @@ async function handleRequest(
     return;
   }
 
-  // Errors endpoint
+  // Errors endpoint - fetch from Next.js app if available, otherwise use local snapshot
   if (url.pathname === "/api/errors") {
     try {
       if (url.searchParams.get("clear") === "true") {
+        // Clear is handled locally for now (could be forwarded to Next.js app in future)
         clearErrorsAndLogs();
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true }));
         return;
       }
 
+      // Try to fetch from Next.js app first
+      const appErrors = await fetchAppErrors(nextDevBaseUrl);
+      if (appErrors) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(appErrors));
+        return;
+      }
+      // Fallback to local snapshot
       const snapshot = getErrorLogSnapshot();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(snapshot));
@@ -1592,6 +1691,25 @@ export function startServer(options: ServerOptions = {}): Promise<void> {
       const url = `http://localhost:${port}`;
       console.log(pc.green(`[nextpulse] Dashboard server running at ${url}`));
       console.log(pc.dim(`[nextpulse] Project root: ${resolvedRoot}`));
+
+      // Start change detector for real-time SSE updates
+      const config = readConfig(resolvedRoot);
+      const nextDevBaseUrl = config.nextDevBaseUrl || "http://localhost:3000";
+      const changeDetector = new ChangeDetector({
+        nextDevBaseUrl,
+        pollInterval: 1000, // Check for changes every second
+        debug: false,
+      });
+      changeDetector.start();
+      console.log(pc.dim("[nextpulse] SSE change detector started"));
+
+      // Cleanup on process exit
+      const cleanup = () => {
+        changeDetector.stop();
+        sseManager.closeAll();
+      };
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
 
       if (shouldOpen) {
         tryOpenBrowser(url);

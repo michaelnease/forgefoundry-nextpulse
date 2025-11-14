@@ -194,7 +194,7 @@ describe("generateFiles", () => {
 
     expect(bundlesContent).toContain("export async function GET()");
     expect(bundlesContent).toContain("scanBundles");
-    expect(bundlesContent).toContain("@forgefoundry/nextpulse/instrumentation");
+    expect(bundlesContent).toContain("@forgefoundry/nextpulse/server");
   });
 
   it("should verify App Router errors route template", async () => {
@@ -233,7 +233,7 @@ describe("generateFiles", () => {
 
     expect(bundlesContent).toContain("export default async function handler");
     expect(bundlesContent).toContain("scanBundles");
-    expect(bundlesContent).toContain("@forgefoundry/nextpulse/instrumentation");
+    expect(bundlesContent).toContain("@forgefoundry/nextpulse/server");
   });
 
   it("should verify Pages Router errors route template", async () => {

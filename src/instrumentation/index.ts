@@ -3,9 +3,10 @@
  * These functions allow NextPulse API routes to access runtime data
  */
 
-export { getRuntimeSnapshot } from "./sessions.js";
+export { getRuntimeSnapshot, beginSession, endSession, setCurrentRoute } from "./sessions.js";
 export { getErrorLogSnapshot, clearErrorsAndLogs } from "./errors.js";
-export { scanBundles } from "../server/bundleScanner.js";
+// Note: scanBundles is server-only and should be imported directly from ../server/bundleScanner.js
+// in API routes, not from this file
 
 // Re-export instrumentation setup functions
 export { instrumentFetch } from "./instrumentFetch.js";

@@ -13,6 +13,7 @@ import type {
   StreamingEvent,
   PerformanceTimelineEntry,
 } from "../types/runtime.js";
+import { SESSION_LIMITS } from "../utils/constants.js";
 
 // In-memory snapshot (singleton)
 let snapshot: RuntimeSnapshot = {
@@ -22,7 +23,7 @@ let snapshot: RuntimeSnapshot = {
 };
 
 // Maximum number of sessions to keep in memory
-const MAX_SESSIONS = 50;
+const MAX_SESSIONS = SESSION_LIMITS.MAX_SESSIONS;
 
 /**
  * Generate a unique session ID

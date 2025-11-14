@@ -70,10 +70,13 @@ program
 
 **Key Files**:
 - `startServer.ts` - HTTP server with inline HTML dashboard
+- `sseManager.ts` - Server-Sent Events connection management ⚡ NEW
+- `changeDetector.ts` - Smart change detection and broadcasting ⚡ NEW
 - `routesScanner.ts` - Scans app/ and pages/ directories
 - `bundleScanner.ts` - Analyzes .next/ build output
 - `snapshot.ts` - Generates diagnostic snapshots
 - `loadMetadata.ts` - Reads project metadata
+- `appRuntimeClient.ts` - Fetches runtime data from Next.js app
 
 **Architecture**:
 
@@ -81,7 +84,11 @@ program
 HTTP Server (port 4337)
 ├── Static Routes
 │   └── GET / → Dashboard HTML
-└── API Routes
+├── SSE Streams (Real-time) ⚡ NEW
+│   ├── GET /api/runtime/stream → Runtime data updates
+│   ├── GET /api/performance/stream → Performance data updates
+│   └── GET /api/errors/stream → Error/log updates
+└── API Routes (Polling fallback)
     ├── GET /api/health
     ├── GET /api/metadata
     ├── GET /api/config

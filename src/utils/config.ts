@@ -10,6 +10,7 @@ export const ConfigSchema = z.object({
     .enum(["bottomRight", "bottomLeft", "topRight", "topLeft"])
     .default("bottomRight"),
   openBrowserOnStart: z.boolean().default(false),
+  nextDevBaseUrl: z.string().default("http://localhost:3000"),
 });
 export type NextPulseConfig = z.infer<typeof ConfigSchema>;
 

@@ -11,6 +11,7 @@ import type {
   LogLevel,
 } from "../types/errors.js";
 import { getCurrentRoute, getRuntimeSnapshot } from "./sessions.js";
+import { ERROR_LIMITS } from "../utils/constants.js";
 
 // In-memory snapshot (singleton)
 let snapshot: ErrorLogSnapshot = {
@@ -20,8 +21,8 @@ let snapshot: ErrorLogSnapshot = {
 };
 
 // Maximum number of errors and logs to keep in memory
-const MAX_ERRORS = 100;
-const MAX_LOGS = 200;
+const MAX_ERRORS = ERROR_LIMITS.MAX_ERRORS;
+const MAX_LOGS = ERROR_LIMITS.MAX_LOGS;
 
 /**
  * Generate a unique ID

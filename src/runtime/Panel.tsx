@@ -6,7 +6,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { StatusIcon } from "./StatusIcon.js";
 import type { RuntimeSnapshot } from "../types/runtime.js";
-import { buildOverlayView } from "../diagnostics/index.js";
+import { buildOverlayView } from "../diagnostics/overlayView.js";
 
 export interface Metadata {
   appName: string;
