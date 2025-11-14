@@ -3,8 +3,9 @@
  * Part of NextPulse runtime - lives in package
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StatusIcon } from "./StatusIcon.js";
+import type { RuntimeSnapshot, SessionEvent } from "../types/runtime.js";
 
 export interface Metadata {
   appName: string;
@@ -21,6 +22,36 @@ interface PanelProps {
 }
 
 export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
+  const [runtimeData, setRuntimeData] = useState<RuntimeSnapshot | null>(null);
+  const [showActivity, setShowActivity] = useState(false);
+  const [showPerf, setShowPerf] = useState(false);
+
+  // Fetch runtime data in development
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    const fetchRuntime = async () => {
+      try {
+        // Note: This requires an API route at /api/nextpulse/runtime in the Next.js app
+        // For now, this will only work if the route exists
+        const response = await fetch("/api/nextpulse/runtime");
+        if (response.ok) {
+          const data = await response.json();
+          setRuntimeData(data);
+        }
+      } catch {
+        // Silently fail - API route may not exist yet
+      }
+    };
+
+    fetchRuntime();
+    const interval = setInterval(fetchRuntime, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Position the panel near the button (60px offset to account for button + spacing)
   const positionStyles: Record<string, React.CSSProperties> = {
     bottomRight: { position: "fixed", bottom: "70px", right: "20px", zIndex: 9999 },
@@ -30,6 +61,24 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
   };
 
   const branchColor = metadata.gitDirty ? "#FF5E5E" : "#3CCF4E";
+  
+  // Get active session
+  const activeSession: SessionEvent | null = runtimeData?.activeSessionId
+    ? runtimeData.sessions.find((s) => s.id === runtimeData.activeSessionId) || null
+    : null;
+
+  const recentFetches = activeSession?.fetches.slice(-5) || [];
+  const lastAction = activeSession?.actions[activeSession.actions.length - 1];
+  
+  // Performance metrics
+  const slowestRsc = activeSession?.rsc.length
+    ? activeSession.rsc.reduce((slowest, current) =>
+        current.durationMs > slowest.durationMs ? current : slowest
+      )
+    : null;
+  const suspenseCount = activeSession?.suspense.length || 0;
+  const streamingCount = activeSession?.streaming.length || 0;
+  const recentFetchDurations = recentFetches.map((f) => f.durationMs);
 
   return (
     <div
@@ -48,7 +97,8 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
         border: "1px solid rgba(255, 255, 255, 0.1)",
         lineHeight: "1.5",
         maxWidth: "280px",
-        pointerEvents: "none",
+        pointerEvents: "auto",
+        cursor: "default",
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: "4px", fontSize: "13px" }}>
@@ -63,6 +113,105 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
           {metadata.gitSha && ` (${metadata.gitSha})`}
         </div>
       </div>
+
+      {/* Activity Section */}
+      {process.env.NODE_ENV === "development" && activeSession && (
+        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+          <button
+            onClick={() => setShowActivity(!showActivity)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#60a5fa",
+              cursor: "pointer",
+              fontSize: "11px",
+              padding: "4px 0",
+              textAlign: "left",
+              width: "100%",
+            }}
+          >
+            {showActivity ? "▼" : "▶"} Activity
+          </button>
+          {showActivity && (
+            <div style={{ marginTop: "8px", fontSize: "10px" }}>
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Fetches:</strong> {activeSession.fetches.length}
+              </div>
+              {recentFetches.length > 0 && (
+                <div style={{ marginBottom: "6px", maxHeight: "100px", overflowY: "auto" }}>
+                  {recentFetches.map((fetch, idx) => (
+                    <div key={idx} style={{ marginBottom: "4px", opacity: 0.8 }}>
+                      <div style={{ fontFamily: "monospace", fontSize: "9px" }}>
+                        {fetch.method} {fetch.statusCode || "..."}
+                      </div>
+                      <div style={{ fontSize: "9px", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {fetch.url.length > 30 ? fetch.url.substring(0, 30) + "..." : fetch.url}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Actions:</strong> {activeSession.actions.length}
+              </div>
+              {lastAction && (
+                <div style={{ fontSize: "9px", opacity: 0.8 }}>
+                  <div>{lastAction.name}</div>
+                  <div style={{ color: lastAction.status === "error" ? "#FF5E5E" : "#3CCF4E" }}>
+                    {lastAction.status} ({lastAction.executionTimeMs}ms)
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Performance Section */}
+      {process.env.NODE_ENV === "development" && activeSession && (
+        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+          <button
+            onClick={() => setShowPerf(!showPerf)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#60a5fa",
+              cursor: "pointer",
+              fontSize: "11px",
+              padding: "4px 0",
+              textAlign: "left",
+              width: "100%",
+            }}
+          >
+            {showPerf ? "▼" : "▶"} Perf
+          </button>
+          {showPerf && (
+            <div style={{ marginTop: "8px", fontSize: "10px" }}>
+              {slowestRsc && (
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Slowest RSC:</strong> {slowestRsc.componentName || "Unknown"} ({slowestRsc.durationMs}ms)
+                </div>
+              )}
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Suspense:</strong> {suspenseCount}
+              </div>
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Streaming:</strong> {streamingCount}
+              </div>
+              {recentFetchDurations.length > 0 && (
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Last 5 Fetches:</strong>
+                  <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "2px" }}>
+                    {recentFetchDurations.map((duration, idx) => (
+                      <div key={idx}>{duration}ms</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

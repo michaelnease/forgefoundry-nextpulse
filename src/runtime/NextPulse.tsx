@@ -8,6 +8,8 @@
 
 import { useEffect, useState } from "react";
 import { Panel, type Metadata } from "./Panel.js";
+import { initializeInstrumentation } from "../instrumentation/index.js";
+import { beginSession, endSession, setCurrentRoute } from "../instrumentation/sessions.js";
 
 interface RuntimeConfig {
   overlayPosition?: "bottomRight" | "bottomLeft" | "topRight" | "topLeft";
@@ -94,9 +96,15 @@ export function NextPulse() {
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [position, setPosition] = useState<"bottomRight" | "bottomLeft" | "topRight" | "topLeft">("bottomRight");
   const [isOpen, setIsOpen] = useState(false);
+  const [pathname, setPathnameState] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
+
+    // Initialize instrumentation in development
+    if (process.env.NODE_ENV === "development") {
+      initializeInstrumentation();
+    }
 
     // Fetch metadata from API route
     fetch("/api/nextpulse/metadata")
@@ -122,6 +130,49 @@ export function NextPulse() {
         // Silently fail - use default position
       });
   }, []);
+
+  // Track route changes for session management
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    // Get current pathname from window.location (works in browser)
+    const currentPath = typeof window !== "undefined" ? window.location.pathname : null;
+    
+    if (currentPath && currentPath !== pathname) {
+      // End previous session
+      if (pathname) {
+        endSession();
+      }
+
+      // Begin new session
+      setPathnameState(currentPath);
+      setCurrentRoute(currentPath);
+      beginSession(currentPath);
+    }
+
+    // Also listen for popstate events (browser back/forward)
+    const handlePopState = () => {
+      const newPath = window.location.pathname;
+      if (newPath !== pathname) {
+        endSession();
+        setPathnameState(newPath);
+        setCurrentRoute(newPath);
+        beginSession(newPath);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Cleanup: end session on unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (pathname) {
+        endSession();
+      }
+    };
+  }, [pathname]);
 
   // Only show in development
   if (process.env.NODE_ENV !== "development") {

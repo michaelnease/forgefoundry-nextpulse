@@ -5,6 +5,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
 import { initCommand } from "../commands/init.js";
+import { startServer } from "../server/startServer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,6 +32,41 @@ program
     try {
       await initCommand(options);
       process.exit(0);
+    } catch (error: any) {
+      console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("serve")
+  .description("Start the NextPulse local dashboard server")
+  .option("--port <port>", "port to run the server on", "4337")
+  .option("--path <path>", "path to Next.js project root", ".")
+  .option("--no-open", "do not automatically open the browser")
+  .action(async (options) => {
+    try {
+      const port = parseInt(options.port, 10);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        throw new Error(`Invalid port: ${options.port}. Must be between 1 and 65535.`);
+      }
+
+      await startServer({
+        port,
+        projectRoot: options.path,
+        openBrowser: options.open === undefined ? true : options.open,
+      });
+
+      // Keep the process alive
+      process.on("SIGINT", () => {
+        console.log(pc.dim("\n[nextpulse] Shutting down..."));
+        process.exit(0);
+      });
+
+      process.on("SIGTERM", () => {
+        console.log(pc.dim("\n[nextpulse] Shutting down..."));
+        process.exit(0);
+      });
     } catch (error: any) {
       console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
       process.exit(1);
