@@ -52,6 +52,7 @@
     "start": "node dist/cli/index.js",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest run",
+    "verify": "pnpm run build && pnpm test",
     "zip-diff": "bash scripts/zip-diff.sh"
   },
   "dependencies": {
