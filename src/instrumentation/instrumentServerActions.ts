@@ -4,6 +4,7 @@
  */
 
 import { recordServerActionEvent, getCurrentRoute } from "./sessions.js";
+import { recordError } from "./errors.js";
 import type { ServerActionEvent } from "../types/runtime.js";
 
 let isInstrumented = false;
@@ -96,6 +97,16 @@ function wrapServerAction<T extends (...args: any[]) => Promise<any>>(
         errorStack,
         startedAt,
         finishedAt,
+      });
+
+      // Record error
+      recordError({
+        route,
+        source: "server-action",
+        message: errorMessage || String(error),
+        stack: errorStack,
+        severity: "error",
+        meta: { actionName, file },
       });
 
       throw error;

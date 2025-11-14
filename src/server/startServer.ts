@@ -13,6 +13,8 @@ import { scanAllRoutes } from "./routesScanner.js";
 import { getRuntimeSnapshot } from "../instrumentation/sessions.js";
 import { buildTimelineForSession, calculatePerformanceMetrics, detectWaterfalls } from "../instrumentation/timeline.js";
 import { scanBundles } from "./bundleScanner.js";
+import { getErrorLogSnapshot, clearErrorsAndLogs } from "../instrumentation/errors.js";
+import { generateDiagnosticSnapshot } from "./snapshot.js";
 import pc from "picocolors";
 
 export interface ServerOptions {
@@ -348,6 +350,8 @@ function getDashboardHTML(): string {
           <button class="tab" data-tab="runtime">Runtime</button>
           <button class="tab" data-tab="performance">Performance</button>
           <button class="tab" data-tab="bundles">Bundles</button>
+          <button class="tab" data-tab="errors">Errors</button>
+          <button class="tab" data-tab="snapshot">Snapshot</button>
         </div>
         <div class="tab-content active" id="tab-metadata">
           <h2>Project Metadata</h2>
@@ -369,6 +373,14 @@ function getDashboardHTML(): string {
           <h2>Bundles & Assets</h2>
           <div id="bundles-content"></div>
         </div>
+        <div class="tab-content" id="tab-errors">
+          <h2>Error & Log Center</h2>
+          <div id="errors-content"></div>
+        </div>
+        <div class="tab-content" id="tab-snapshot">
+          <h2>Diagnostic Snapshot</h2>
+          <div id="snapshot-content"></div>
+        </div>
       </div>
       <div id="error" class="error" style="display: none;"></div>
     </div>
@@ -385,6 +397,8 @@ function getDashboardHTML(): string {
     const runtimeContent = document.getElementById('runtime-content');
     const performanceContent = document.getElementById('performance-content');
     const bundlesContent = document.getElementById('bundles-content');
+    const errorsContent = document.getElementById('errors-content');
+    const snapshotContent = document.getElementById('snapshot-content');
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
     
@@ -396,6 +410,8 @@ function getDashboardHTML(): string {
     let performanceInterval = null;
     let bundlesData = null;
     let bundlesInterval = null;
+    let errorsData = null;
+    let errorsInterval = null;
     
     // Tab switching
     tabs.forEach(tab => {
@@ -447,6 +463,48 @@ function getDashboardHTML(): string {
             clearInterval(performanceInterval);
             performanceInterval = null;
           }
+          if (errorsInterval) {
+            clearInterval(errorsInterval);
+            errorsInterval = null;
+          }
+        } else if (tabName === 'errors') {
+          loadErrors();
+          // Start auto-refresh
+          if (errorsInterval) clearInterval(errorsInterval);
+          errorsInterval = setInterval(loadErrors, 1000);
+          // Stop other refreshes
+          if (runtimeInterval) {
+            clearInterval(runtimeInterval);
+            runtimeInterval = null;
+          }
+          if (performanceInterval) {
+            clearInterval(performanceInterval);
+            performanceInterval = null;
+          }
+          if (bundlesInterval) {
+            clearInterval(bundlesInterval);
+            bundlesInterval = null;
+          }
+        } else if (tabName === 'snapshot') {
+          loadSnapshot();
+          // No auto-refresh for snapshot
+          // Stop other refreshes
+          if (runtimeInterval) {
+            clearInterval(runtimeInterval);
+            runtimeInterval = null;
+          }
+          if (performanceInterval) {
+            clearInterval(performanceInterval);
+            performanceInterval = null;
+          }
+          if (bundlesInterval) {
+            clearInterval(bundlesInterval);
+            bundlesInterval = null;
+          }
+          if (errorsInterval) {
+            clearInterval(errorsInterval);
+            errorsInterval = null;
+          }
         } else {
           // Stop auto-refresh when switching away
           if (runtimeInterval) {
@@ -460,6 +518,10 @@ function getDashboardHTML(): string {
           if (bundlesInterval) {
             clearInterval(bundlesInterval);
             bundlesInterval = null;
+          }
+          if (errorsInterval) {
+            clearInterval(errorsInterval);
+            errorsInterval = null;
           }
         }
       });
@@ -1051,6 +1113,213 @@ function getDashboardHTML(): string {
       bundlesContent.innerHTML = html;
     }
     
+    async function loadErrors() {
+      try {
+        const response = await fetch('/api/errors');
+        if (!response.ok) {
+          throw new Error('Failed to load error data');
+        }
+        errorsData = await response.json();
+        renderErrors(errorsData);
+      } catch (err) {
+        errorsContent.innerHTML = \`<div class="error">Failed to load error data: \${err.message || 'Unknown error'}</div>\`;
+      }
+    }
+    
+    function formatTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return \`\${seconds}s ago\`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return \`\${minutes}m ago\`;
+      const hours = Math.floor(minutes / 60);
+      return \`\${hours}h ago\`;
+    }
+    
+    function renderErrors(data) {
+      if (!data) {
+        errorsContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No error data available</div>';
+        return;
+      }
+      
+      const errors = data.errors || [];
+      const logs = data.logs || [];
+      
+      // Calculate summary
+      const errorCount = errors.filter(e => e.severity === 'error').length;
+      const warningCount = errors.filter(e => e.severity === 'warning').length;
+      const infoCount = logs.filter(l => l.level === 'info').length;
+      const affectedRoutes = new Set(errors.map(e => e.route).filter(Boolean)).size;
+      
+      let html = \`
+        <div class="routes-summary">
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Total Errors</div>
+            <div class="routes-summary-value" style="color: #ef4444;">\${errorCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Warnings</div>
+            <div class="routes-summary-value" style="color: #f59e0b;">\${warningCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Info Logs</div>
+            <div class="routes-summary-value">\${infoCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Affected Routes</div>
+            <div class="routes-summary-value">\${affectedRoutes}</div>
+          </div>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 12px;">
+          <button onclick="clearErrors()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Clear All</button>
+        </div>
+      \`;
+      
+      // Error list
+      if (errors.length > 0) {
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Recent Errors</h3>';
+        html += '<div class="routes-list">';
+        errors.slice(0, 20).forEach((error, idx) => {
+          const severityColor = error.severity === 'error' ? '#ef4444' : error.severity === 'warning' ? '#f59e0b' : '#3b82f6';
+          html += \`
+            <div class="route-item" style="border-left: 3px solid \${severityColor}; cursor: pointer;" onclick="toggleErrorDetails('\${error.id}')">
+              <div class="route-path">
+                <span style="color: \${severityColor}; font-weight: 600;">\${error.severity.toUpperCase()}</span>
+                <span style="color: #94a3b8; margin-left: 8px;">\${formatTimeAgo(error.timestamp)}</span>
+                <span style="color: #94a3b8; margin-left: 8px;">\${escapeHtml(error.source)}</span>
+              </div>
+              <div style="font-size: 11px; color: #e2e8f0; margin-top: 4px;">
+                \${escapeHtml(error.route || 'unknown route')}
+              </div>
+              <div style="font-size: 11px; color: #cbd5e1; margin-top: 4px;">
+                \${escapeHtml(error.message)}
+              </div>
+              <div id="error-details-\${error.id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(0, 0, 0, 0.3); border-radius: 4px; font-size: 10px; font-family: monospace; white-space: pre-wrap; color: #94a3b8;">
+                \${error.stack ? escapeHtml(error.stack) : 'No stack trace available'}
+                \${error.meta ? '<br><br>Meta: ' + escapeHtml(JSON.stringify(error.meta, null, 2)) : ''}
+              </div>
+            </div>
+          \`;
+        });
+        html += '</div>';
+      } else {
+        html += '<div style="text-align: center; color: #94a3b8; padding: 40px;">No errors recorded</div>';
+      }
+      
+      errorsContent.innerHTML = html;
+    }
+    
+    function toggleErrorDetails(errorId) {
+      const details = document.getElementById(\`error-details-\${errorId}\`);
+      if (details) {
+        details.style.display = details.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+    
+    async function clearErrors() {
+      try {
+        const response = await fetch('/api/errors?clear=true');
+        if (response.ok) {
+          loadErrors();
+        }
+      } catch (err) {
+        console.error('Failed to clear errors:', err);
+      }
+    }
+    
+    async function loadSnapshot() {
+      try {
+        const response = await fetch('/api/snapshot');
+        if (!response.ok) {
+          throw new Error('Failed to load snapshot');
+        }
+        const snapshot = await response.json();
+        renderSnapshot(snapshot);
+      } catch (err) {
+        snapshotContent.innerHTML = \`<div class="error">Failed to load snapshot: \${err.message || 'Unknown error'}</div>\`;
+      }
+    }
+    
+    function renderSnapshot(snapshot) {
+      if (!snapshot) {
+        snapshotContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No snapshot data available</div>';
+        return;
+      }
+      
+      // Summary
+      const routeCount = (snapshot.routes?.appRoutes?.length || 0) + (snapshot.routes?.pagesRoutes?.length || 0);
+      const bundleCount = snapshot.bundles?.assets?.length || 0;
+      const errorCount = snapshot.errors?.errors?.length || 0;
+      const sessionCount = snapshot.runtime?.sessions?.length || 0;
+      const totalClientSize = snapshot.bundles?.totalClientSize || 0;
+      const totalServerSize = snapshot.bundles?.totalServerSize || 0;
+      
+      let html = \`
+        <div style="margin-bottom: 24px;">
+          <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+            This is a complete diagnostic profile for AI analysis. Export the snapshot to share with AI assistants or for debugging.
+          </p>
+          <button onclick="exportSnapshot()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+            Export Snapshot
+          </button>
+        </div>
+        
+        <div class="routes-summary">
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Routes</div>
+            <div class="routes-summary-value">\${routeCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Bundles</div>
+            <div class="routes-summary-value">\${bundleCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Errors</div>
+            <div class="routes-summary-value" style="color: \${errorCount > 0 ? '#ef4444' : '#22c55e'}">\${errorCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Sessions</div>
+            <div class="routes-summary-value">\${sessionCount}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Client Size</div>
+            <div class="routes-summary-value">\${formatBytes(totalClientSize)}</div>
+          </div>
+          <div class="routes-summary-item">
+            <div class="routes-summary-label">Server Size</div>
+            <div class="routes-summary-value">\${formatBytes(totalServerSize)}</div>
+          </div>
+        </div>
+        
+        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Snapshot Preview</h3>
+        <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #cbd5e1;">
+          <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">\${escapeHtml(JSON.stringify(snapshot, null, 2).substring(0, 2000))}...</pre>
+        </div>
+      \`;
+      
+      snapshotContent.innerHTML = html;
+    }
+    
+    async function exportSnapshot() {
+      try {
+        const response = await fetch('/api/snapshot');
+        if (!response.ok) {
+          throw new Error('Failed to export snapshot');
+        }
+        const snapshot = await response.json();
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = \`nextpulse-snapshot-\${snapshot.timestamp}.json\`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Failed to export snapshot: ' + (err.message || 'Unknown error'));
+      }
+    }
+    
     // Auto-open panel on load
   </script>
 </body>
@@ -1223,6 +1492,49 @@ async function handleRequest(
       res.end(
         JSON.stringify({
           error: "Failed to scan bundles",
+          message: error?.message || "Unknown error",
+        })
+      );
+    }
+    return;
+  }
+
+  // Errors endpoint
+  if (url.pathname === "/api/errors") {
+    try {
+      if (url.searchParams.get("clear") === "true") {
+        clearErrorsAndLogs();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true }));
+        return;
+      }
+
+      const snapshot = getErrorLogSnapshot();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(snapshot));
+    } catch (error: any) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error: "Failed to get error log snapshot",
+          message: error?.message || "Unknown error",
+        })
+      );
+    }
+    return;
+  }
+
+  // Snapshot endpoint
+  if (url.pathname === "/api/snapshot") {
+    try {
+      const snapshot = await generateDiagnosticSnapshot(projectRoot);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(snapshot, null, 2));
+    } catch (error: any) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error: "Failed to generate diagnostic snapshot",
           message: error?.message || "Unknown error",
         })
       );

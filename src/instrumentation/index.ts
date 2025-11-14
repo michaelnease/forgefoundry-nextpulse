@@ -8,6 +8,7 @@ import { instrumentServerActions } from "./instrumentServerActions.js";
 import { instrumentRSC } from "./instrumentRSC.js";
 import { instrumentSuspense } from "./instrumentSuspense.js";
 import { instrumentStreaming } from "./instrumentStreaming.js";
+import { initializeClientErrorHooks } from "./clientErrorHooks.js";
 
 let isInitialized = false;
 
@@ -41,6 +42,11 @@ export function initializeInstrumentation(): void {
 
     // Instrument streaming phases
     instrumentStreaming();
+
+    // Initialize client-side error hooks (browser only)
+    if (typeof window !== "undefined") {
+      initializeClientErrorHooks();
+    }
 
     isInitialized = true;
   } catch (error) {

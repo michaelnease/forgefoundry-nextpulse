@@ -1,0 +1,187 @@
+/**
+ * Diagnostic snapshot generator for NextPulse
+ * Combines all diagnostic data into a single AI-readable snapshot
+ */
+
+import { loadMetadata } from "./loadMetadata.js";
+import { readConfig } from "../utils/config.js";
+import { scanAllRoutes } from "./routesScanner.js";
+import { scanBundles } from "./bundleScanner.js";
+import { getRuntimeSnapshot } from "../instrumentation/sessions.js";
+import { getErrorLogSnapshot } from "../instrumentation/errors.js";
+import { buildTimelineForSession, calculatePerformanceMetrics, detectWaterfalls } from "../instrumentation/timeline.js";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { execSync } from "child_process";
+import type { DiagnosticSnapshot, PerformanceSnapshot, EnvironmentInfo } from "../types/snapshot.js";
+
+/**
+ * Safely execute a shell command
+ */
+function safeExec(command: string, cwd: string): string | null {
+  try {
+    return execSync(command, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "ignore"],
+      cwd,
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get git information
+ */
+function getGitInfo(projectRoot: string): EnvironmentInfo["git"] {
+  const branch = safeExec("git rev-parse --abbrev-ref HEAD", projectRoot) || "unknown";
+  const sha = safeExec("git rev-parse HEAD", projectRoot) || "unknown";
+  const status = safeExec("git status --porcelain", projectRoot);
+  const dirty = status !== null && status.length > 0;
+
+  return {
+    branch,
+    sha: sha.substring(0, 7), // Short SHA
+    dirty,
+  };
+}
+
+/**
+ * Get Next.js version from project
+ */
+function getNextJsVersion(projectRoot: string): string | null {
+  try {
+    const packageJsonPath = join(projectRoot, "package.json");
+    if (!existsSync(packageJsonPath)) {
+      return null;
+    }
+
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+    const nextVersion =
+      packageJson.dependencies?.next ||
+      packageJson.devDependencies?.next ||
+      packageJson.peerDependencies?.next;
+
+    return nextVersion || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get NextPulse version
+ */
+function getNextPulseVersion(): string {
+  // Try reading from package.json in various locations
+  const possiblePaths = [
+    // When running from dist
+    join(process.cwd(), "node_modules", "@forgefoundry", "nextpulse", "package.json"),
+    // When running from source
+    join(process.cwd(), "package.json"),
+  ];
+
+  for (const packageJsonPath of possiblePaths) {
+    try {
+      if (existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+        if (packageJson.name === "@forgefoundry/nextpulse") {
+          return packageJson.version || "unknown";
+        }
+      }
+    } catch {
+      // Continue to next path
+    }
+  }
+
+  return "unknown";
+}
+
+/**
+ * Get environment information
+ */
+function getEnvironmentInfo(projectRoot: string): EnvironmentInfo {
+  return {
+    node: process.versions.node,
+    platform: process.platform,
+    nextpulseVersion: getNextPulseVersion(),
+    nextJsVersion: getNextJsVersion(projectRoot),
+    git: getGitInfo(projectRoot),
+  };
+}
+
+/**
+ * Build performance snapshot from runtime snapshot
+ */
+function buildPerformanceSnapshot(runtimeSnapshot: ReturnType<typeof getRuntimeSnapshot>): PerformanceSnapshot {
+  const enrichedSessions = runtimeSnapshot.sessions.map((session) => {
+    // Build timeline if not already built
+    const timeline = session.timeline.length > 0
+      ? session.timeline
+      : buildTimelineForSession(session);
+
+    const metrics = calculatePerformanceMetrics(session);
+    const waterfalls = detectWaterfalls(session);
+
+    return {
+      id: session.id,
+      route: session.route,
+      startedAt: session.startedAt,
+      finishedAt: session.finishedAt,
+      metrics: {
+        totalServerRenderTime: metrics.totalServerRenderTime,
+        totalStreamingTime: metrics.totalStreamingTime,
+        slowestRscComponent: metrics.slowestRscComponent
+          ? {
+              componentName: metrics.slowestRscComponent.componentName,
+              durationMs: metrics.slowestRscComponent.durationMs,
+            }
+          : null,
+        suspenseBoundaryCount: metrics.suspenseBoundaryCount,
+        waterfallCount: metrics.waterfallCount,
+      },
+      waterfalls: waterfalls.map((w) => ({
+        type: w.type,
+        events: w.events, // Keep events for context
+        totalDuration: w.totalDuration,
+      })),
+    };
+  });
+
+  return {
+    sessions: enrichedSessions,
+    activeSessionId: runtimeSnapshot.activeSessionId,
+    lastUpdated: runtimeSnapshot.lastUpdated,
+  };
+}
+
+/**
+ * Generate a complete diagnostic snapshot
+ * Combines all diagnostic data from all phases
+ */
+export async function generateDiagnosticSnapshot(projectRoot: string): Promise<DiagnosticSnapshot> {
+  // Gather all data
+  const metadata = loadMetadata(projectRoot);
+  const config = readConfig(projectRoot);
+  const routes = scanAllRoutes(projectRoot);
+  const bundles = scanBundles(projectRoot); // May be null if .next doesn't exist
+  const runtimeSnapshot = getRuntimeSnapshot();
+  const performanceSnapshot = buildPerformanceSnapshot(runtimeSnapshot);
+  const errorsSnapshot = getErrorLogSnapshot();
+  const environment = getEnvironmentInfo(projectRoot);
+
+  // Build complete snapshot
+  const snapshot: DiagnosticSnapshot = {
+    timestamp: Date.now(),
+    metadata,
+    config,
+    routes,
+    bundles,
+    runtime: runtimeSnapshot,
+    performance: performanceSnapshot,
+    errors: errorsSnapshot,
+    environment,
+  };
+
+  return snapshot;
+}
+

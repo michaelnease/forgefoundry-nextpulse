@@ -27,6 +27,8 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
   const [showPerf, setShowPerf] = useState(false);
   const [showBundles, setShowBundles] = useState(false);
   const [bundlesData, setBundlesData] = useState<any>(null);
+  const [showErrors, setShowErrors] = useState(false);
+  const [errorsData, setErrorsData] = useState<any>(null);
 
   // Fetch runtime data in development
   useEffect(() => {
@@ -67,9 +69,26 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
     fetchBundles();
     const bundlesInterval = setInterval(fetchBundles, 5000); // Poll every 5 seconds
 
+    // Fetch error data
+    const fetchErrors = async () => {
+      try {
+        const response = await fetch("/api/nextpulse/errors");
+        if (response.ok) {
+          const data = await response.json();
+          setErrorsData(data);
+        }
+      } catch {
+        // Silently fail - API route may not exist yet
+      }
+    };
+
+    fetchErrors();
+    const errorsInterval = setInterval(fetchErrors, 2000); // Poll every 2 seconds
+
     return () => {
       clearInterval(interval);
       clearInterval(bundlesInterval);
+      clearInterval(errorsInterval);
     };
   }, []);
 
@@ -268,6 +287,75 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
                   )}
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Errors Section */}
+      {process.env.NODE_ENV === "development" && errorsData && (
+        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+          <button
+            onClick={() => setShowErrors(!showErrors)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#60a5fa",
+              cursor: "pointer",
+              fontSize: "11px",
+              padding: "4px 0",
+              textAlign: "left",
+              width: "100%",
+            }}
+          >
+            {showErrors ? "▼" : "▶"} Errors
+            {errorsData.errors && errorsData.errors.length > 0 && (
+              <span
+                style={{
+                  marginLeft: "8px",
+                  padding: "2px 6px",
+                  background: "#ef4444",
+                  borderRadius: "10px",
+                  fontSize: "9px",
+                }}
+              >
+                {errorsData.errors.length}
+              </span>
+            )}
+          </button>
+          {showErrors && errorsData.errors && errorsData.errors.length > 0 && (
+            <div style={{ marginTop: "8px", fontSize: "10px" }}>
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Last Error:</strong>
+                <div
+                  style={{
+                    fontSize: "9px",
+                    color: "#cbd5e1",
+                    marginTop: "2px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {errorsData.errors[0].message.length > 50
+                    ? errorsData.errors[0].message.substring(0, 50) + "..."
+                    : errorsData.errors[0].message}
+                </div>
+              </div>
+              <div style={{ marginTop: "8px" }}>
+                <a
+                  href="http://localhost:4337"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#60a5fa",
+                    textDecoration: "none",
+                    fontSize: "9px",
+                  }}
+                >
+                  Open in NextPulse Dashboard →
+                </a>
+              </div>
             </div>
           )}
         </div>

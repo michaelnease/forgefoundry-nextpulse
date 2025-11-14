@@ -4,6 +4,7 @@
  */
 
 import { recordFetchEvent, getCurrentRoute } from "./sessions.js";
+import { recordError } from "./errors.js";
 import type { FetchEvent } from "../types/runtime.js";
 
 let isInstrumented = false;
@@ -155,6 +156,17 @@ export function instrumentFetch(): void {
         finishedAt,
       });
 
+      // Record error for non-2xx status codes
+      if (statusCode >= 400) {
+        recordError({
+          route,
+          source: "fetch",
+          message: `Fetch returned ${statusCode}: ${url}`,
+          severity: statusCode >= 500 ? "error" : "warning",
+          meta: { url, method, statusCode, origin },
+        });
+      }
+
       return response;
     } catch (error) {
       finishedAt = Date.now();
@@ -172,6 +184,16 @@ export function instrumentFetch(): void {
         cacheResult: "unknown",
         startedAt,
         finishedAt,
+      });
+
+      // Record error
+      recordError({
+        route,
+        source: "fetch",
+        message: `Fetch failed: ${error instanceof Error ? error.message : String(error)}`,
+        stack: error instanceof Error ? error.stack : undefined,
+        severity: "error",
+        meta: { url, method, origin },
       });
 
       throw error;

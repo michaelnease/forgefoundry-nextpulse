@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import { join, dirname } from "path";
 import { initCommand } from "../commands/init.js";
 import { startServer } from "../server/startServer.js";
+import { generateDiagnosticSnapshot } from "../server/snapshot.js";
+import { resolve } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -67,6 +69,23 @@ program
         console.log(pc.dim("\n[nextpulse] Shutting down..."));
         process.exit(0);
       });
+    } catch (error: any) {
+      console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("snapshot")
+  .description("Generate a complete diagnostic snapshot (AI-readable JSON)")
+  .option("--path <path>", "path to Next.js project root", ".")
+  .action(async (options) => {
+    try {
+      const projectRoot = resolve(options.path);
+      const snapshot = await generateDiagnosticSnapshot(projectRoot);
+      
+      // Print JSON to stdout (pretty-printed, 2 spaces)
+      console.log(JSON.stringify(snapshot, null, 2));
     } catch (error: any) {
       console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
       process.exit(1);

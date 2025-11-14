@@ -4,6 +4,7 @@
  */
 
 import { recordRscRenderEvent, getCurrentRoute } from "./sessions.js";
+import { recordError } from "./errors.js";
 import type { RscRenderEvent } from "../types/runtime.js";
 
 let isInstrumented = false;
@@ -106,6 +107,16 @@ function wrapAsyncComponent<T extends (...args: any[]) => Promise<any>>(
         isAsync: true,
       });
 
+      // Record error
+      recordError({
+        route,
+        source: "rsc-render",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        severity: "error",
+        meta: { file, componentName },
+      });
+
       throw error;
     }
   }) as T;
@@ -180,6 +191,16 @@ function wrapSyncComponent<T extends (...args: any[]) => any>(component: T, name
         startedAt,
         finishedAt,
         isAsync: false,
+      });
+
+      // Record error
+      recordError({
+        route,
+        source: "rsc-render",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        severity: "error",
+        meta: { file, componentName },
       });
 
       throw error;
