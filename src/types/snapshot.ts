@@ -69,4 +69,3 @@ export interface DiagnosticSnapshot {
   errors: ErrorLogSnapshot;
   environment: EnvironmentInfo;
 }
-

@@ -6,12 +6,7 @@
 import { existsSync, readdirSync, statSync, readFileSync } from "fs";
 import { join, extname, basename, dirname } from "path";
 import { gzipSync } from "zlib";
-import type {
-  BundleAsset,
-  ChunkInfo,
-  RouteBundleInfo,
-  BundlesSnapshot,
-} from "../types/bundles.js";
+import type { BundleAsset, ChunkInfo, RouteBundleInfo, BundlesSnapshot } from "../types/bundles.js";
 import { scanAllRoutes } from "./routesScanner.js";
 import type { RouteInfo } from "../types/routes.js";
 
@@ -22,10 +17,11 @@ const NEXT_DIR = ".next";
  */
 function getAssetType(filename: string): BundleAsset["type"] {
   const ext = extname(filename).toLowerCase();
-  
+
   if (ext === ".js" || ext === ".mjs" || ext === ".cjs") return "js";
   if (ext === ".css") return "css";
-  if ([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".avif"].includes(ext)) return "image";
+  if ([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".avif"].includes(ext))
+    return "image";
   if ([".woff", ".woff2", ".ttf", ".otf", ".eot"].includes(ext)) return "font";
   return "other";
 }
@@ -59,7 +55,12 @@ function extractChunkBaseName(filename: string): string {
  * Check if chunk is an entry chunk
  */
 function isEntryChunk(name: string): boolean {
-  return name === "main" || name === "pages/_app" || name === "pages/_document" || name.startsWith("app/");
+  return (
+    name === "main" ||
+    name === "pages/_app" ||
+    name === "pages/_document" ||
+    name.startsWith("app/")
+  );
 }
 
 /**
@@ -72,11 +73,7 @@ function isDynamicChunk(name: string): boolean {
 /**
  * Scan directory recursively for files
  */
-function scanDirectory(
-  dirPath: string,
-  assets: BundleAsset[],
-  projectRoot: string
-): void {
+function scanDirectory(dirPath: string, assets: BundleAsset[], projectRoot: string): void {
   if (!existsSync(dirPath)) {
     return;
   }
@@ -94,7 +91,7 @@ function scanDirectory(
         try {
           const stats = statSync(fullPath);
           const size = stats.size;
-          
+
           // Calculate gzip size
           let gzipSize: number | undefined;
           try {
@@ -110,7 +107,7 @@ function scanDirectory(
 
           const isClient = isClientPath(fullPath);
           const isServer = isServerPath(fullPath);
-          
+
           // Determine if shared (used by multiple routes)
           // This is a heuristic: chunks in /static/chunks/ that aren't route-specific
           const isShared = isClient && !fullPath.includes("/pages/") && !fullPath.includes("/app/");
@@ -192,8 +189,9 @@ function buildRouteMapping(
     let totalServerSize = 0;
 
     // Find server bundles for this route
-    const routePath = route.path === "/" ? "index" : route.path.replace(/^\//, "").replace(/\//g, "-");
-    
+    const routePath =
+      route.path === "/" ? "index" : route.path.replace(/^\//, "").replace(/\//g, "-");
+
     for (const asset of assets) {
       if (asset.isServer && asset.path.includes(routePath)) {
         serverChunks.push(asset.name);
@@ -204,9 +202,10 @@ function buildRouteMapping(
     // Find client chunks for this route
     // App Router: look for app/... chunks
     // Pages Router: look for pages/... chunks
-    const routeSegment = route.router === "app" 
-      ? route.path.replace(/^\//, "").replace(/\//g, "-")
-      : route.path.replace(/^\//, "").replace(/\//g, "-");
+    const routeSegment =
+      route.router === "app"
+        ? route.path.replace(/^\//, "").replace(/\//g, "-")
+        : route.path.replace(/^\//, "").replace(/\//g, "-");
 
     for (const chunk of chunks) {
       if (chunk.name.includes(routeSegment) || chunk.name.includes(routePath)) {
@@ -268,16 +267,16 @@ export function scanBundles(projectRoot: string): BundlesSnapshot | null {
 
   // Get routes for mapping
   const routes = scanAllRoutes(projectRoot);
-  const routeMapping = buildRouteMapping(routes.appRoutes.concat(routes.pagesRoutes), assets, chunks);
+  const routeMapping = buildRouteMapping(
+    routes.appRoutes.concat(routes.pagesRoutes),
+    assets,
+    chunks
+  );
 
   // Calculate totals
-  const totalClientSize = assets
-    .filter((a) => a.isClient)
-    .reduce((sum, a) => sum + a.size, 0);
-  
-  const totalServerSize = assets
-    .filter((a) => a.isServer)
-    .reduce((sum, a) => sum + a.size, 0);
+  const totalClientSize = assets.filter((a) => a.isClient).reduce((sum, a) => sum + a.size, 0);
+
+  const totalServerSize = assets.filter((a) => a.isServer).reduce((sum, a) => sum + a.size, 0);
 
   return {
     assets,
@@ -288,4 +287,3 @@ export function scanBundles(projectRoot: string): BundlesSnapshot | null {
     generatedAt: Date.now(),
   };
 }
-

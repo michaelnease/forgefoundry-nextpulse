@@ -59,9 +59,7 @@ describe("instrumentation", () => {
       });
 
       const snapshot = getRuntimeSnapshot();
-      const activeSession = snapshot.sessions.find(
-        (s) => s.id === snapshot.activeSessionId
-      );
+      const activeSession = snapshot.sessions.find((s) => s.id === snapshot.activeSessionId);
       expect(activeSession?.fetches.length).toBe(1);
       expect(activeSession?.fetches[0].url).toBe("https://example.com/api");
     });
@@ -80,9 +78,7 @@ describe("instrumentation", () => {
       });
 
       const snapshot = getRuntimeSnapshot();
-      const activeSession = snapshot.sessions.find(
-        (s) => s.id === snapshot.activeSessionId
-      );
+      const activeSession = snapshot.sessions.find((s) => s.id === snapshot.activeSessionId);
       expect(activeSession?.actions.length).toBe(1);
       expect(activeSession?.actions[0].name).toBe("testAction");
     });
@@ -178,4 +174,3 @@ describe("instrumentation", () => {
     });
   });
 });
-

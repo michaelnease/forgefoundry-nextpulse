@@ -11,7 +11,7 @@ import { loadMetadata } from "./loadMetadata.js";
 import { readConfig } from "../utils/config.js";
 import { scanAllRoutes } from "./routesScanner.js";
 import { getRuntimeSnapshot } from "../instrumentation/sessions.js";
-import { buildTimelineForSession, calculatePerformanceMetrics, detectWaterfalls } from "../instrumentation/timeline.js";
+import { buildDiagnosticsSnapshot } from "../diagnostics/index.js";
 import { scanBundles } from "./bundleScanner.js";
 import { getErrorLogSnapshot, clearErrorsAndLogs } from "../instrumentation/errors.js";
 import { generateDiagnosticSnapshot } from "./snapshot.js";
@@ -1417,12 +1417,7 @@ async function handleRequest(
   if (url.pathname === "/api/runtime") {
     try {
       const snapshot = getRuntimeSnapshot();
-      // Build timelines for all sessions
-      snapshot.sessions.forEach((session) => {
-        if (session.timeline.length === 0) {
-          session.timeline = buildTimelineForSession(session);
-        }
-      });
+      // Return raw runtime snapshot (timelines will be built on-demand by consumers)
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(snapshot));
     } catch (error: any) {
@@ -1440,30 +1435,12 @@ async function handleRequest(
   // Performance endpoint
   if (url.pathname === "/api/performance") {
     try {
-      const snapshot = getRuntimeSnapshot();
-      // Build timelines and calculate metrics for all sessions
-      const enrichedSessions = snapshot.sessions.map((session) => {
-        // Build timeline if not already built
-        if (session.timeline.length === 0) {
-          session.timeline = buildTimelineForSession(session);
-        }
-        const metrics = calculatePerformanceMetrics(session);
-        const waterfalls = detectWaterfalls(session);
-        return {
-          ...session,
-          metrics,
-          waterfalls,
-        };
-      });
+      // Use shared diagnostics module to get performance snapshot
+      const diagnosticsSnapshot = buildDiagnosticsSnapshot(projectRoot);
+      const performance = diagnosticsSnapshot.performance;
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(
-        JSON.stringify({
-          sessions: enrichedSessions,
-          activeSessionId: snapshot.activeSessionId,
-          lastUpdated: snapshot.lastUpdated,
-        })
-      );
+      res.end(JSON.stringify(performance));
     } catch (error: any) {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(
@@ -1600,7 +1577,9 @@ export function startServer(options: ServerOptions = {}): Promise<void> {
     server.on("error", (error: NodeJS.ErrnoException) => {
       if (error.code === "EADDRINUSE") {
         console.error(
-          pc.red(`[nextpulse] Port ${port} is already in use. Please choose a different port with --port.`)
+          pc.red(
+            `[nextpulse] Port ${port} is already in use. Please choose a different port with --port.`
+          )
         );
         promiseReject(new Error(`Port ${port} is already in use`));
       } else {
@@ -1622,4 +1601,3 @@ export function startServer(options: ServerOptions = {}): Promise<void> {
     });
   });
 }
-

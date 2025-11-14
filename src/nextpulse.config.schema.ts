@@ -2,7 +2,9 @@ import { z } from "zod";
 
 export const nextpulseConfigSchema = z.object({
   enabled: z.boolean().default(true),
-  overlayPosition: z.enum(["bottomRight", "bottomLeft", "topRight", "topLeft"]).default("bottomRight"),
+  overlayPosition: z
+    .enum(["bottomRight", "bottomLeft", "topRight", "topLeft"])
+    .default("bottomRight"),
   openBrowserOnStart: z.boolean().default(false),
 });
 

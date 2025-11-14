@@ -4,7 +4,15 @@
  */
 
 import { join } from "path";
-import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, readdirSync, rmdirSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  unlinkSync,
+  readdirSync,
+  rmdirSync,
+} from "fs";
 import pc from "picocolors";
 import { getAppRouterApiTemplates, getPagesRouterApiTemplates } from "./templates.js";
 
@@ -28,9 +36,8 @@ export function generateApiRoutes(
   routerType: "app" | "pages",
   options?: GenerateFilesOptions
 ): GenerateResult[] {
-  const apiRoutes = routerType === "app"
-    ? getAppRouterApiTemplates()
-    : getPagesRouterApiTemplates();
+  const apiRoutes =
+    routerType === "app" ? getAppRouterApiTemplates() : getPagesRouterApiTemplates();
   const results: GenerateResult[] = [];
 
   // Write API route files
@@ -41,7 +48,8 @@ export function generateApiRoutes(
 
     // Log action
     if (!options?.dryRun) {
-      const actionColor = action === "created" ? pc.green : action === "updated" ? pc.yellow : pc.dim;
+      const actionColor =
+        action === "created" ? pc.green : action === "updated" ? pc.yellow : pc.dim;
       console.log(actionColor(`[nextpulse] ${action} ${filePath}`));
     } else {
       console.log(pc.dim(`[dry-run] ${action} ${filePath}`));
@@ -98,9 +106,8 @@ export function removeApiRoutes(
   routerType: "app" | "pages",
   options?: { dryRun?: boolean }
 ): GenerateResult[] {
-  const apiRoutes = routerType === "app"
-    ? getAppRouterApiTemplates()
-    : getPagesRouterApiTemplates();
+  const apiRoutes =
+    routerType === "app" ? getAppRouterApiTemplates() : getPagesRouterApiTemplates();
   const results: GenerateResult[] = [];
 
   // Remove API route files

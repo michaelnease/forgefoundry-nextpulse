@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  insertImport,
-  insertComponent,
-} from "../src/utils/injection.js";
+import { insertImport, insertComponent } from "../src/utils/injection.js";
 
 describe("injection snapshots", () => {
   describe("App Router layout injection", () => {
@@ -110,4 +107,3 @@ export default function App({ Component, pageProps }) {
     });
   });
 });
-

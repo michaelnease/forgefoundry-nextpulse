@@ -19,7 +19,10 @@ import {
 } from "../src/instrumentation/timeline.js";
 import { instrumentRSC, createInstrumentedRSC } from "../src/instrumentation/instrumentRSC.js";
 import { instrumentSuspense } from "../src/instrumentation/instrumentSuspense.js";
-import { instrumentStreaming, recordStreamingPhase } from "../src/instrumentation/instrumentStreaming.js";
+import {
+  instrumentStreaming,
+  recordStreamingPhase,
+} from "../src/instrumentation/instrumentStreaming.js";
 import { recordStreamingEvent } from "../src/instrumentation/sessions.js";
 import type {
   RscRenderEvent,
@@ -381,4 +384,3 @@ describe("Performance Instrumentation", () => {
     });
   });
 });
-

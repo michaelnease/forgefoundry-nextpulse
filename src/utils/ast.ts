@@ -23,7 +23,10 @@ export async function detectRouterType(appRoot: string): Promise<RouterType> {
   return null;
 }
 
-export async function findEntryFile(appRoot: string, routerType: RouterType): Promise<string | null> {
+export async function findEntryFile(
+  appRoot: string,
+  routerType: RouterType
+): Promise<string | null> {
   if (!routerType) return null;
 
   if (routerType === "app") {
@@ -94,10 +97,7 @@ export function patchAppRouterLayout(code: string, importPath: string): PatchRes
       if (!node || typeof node !== "object") return false;
 
       // Look for JSX element with name "body"
-      if (
-        node.type === "JSXElement" &&
-        node.openingElement?.name?.name === "body"
-      ) {
+      if (node.type === "JSXElement" && node.openingElement?.name?.name === "body") {
         // Check if NextPulse is already present
         const hasNextPulse = node.children?.some((child: any) => {
           return (
@@ -395,10 +395,7 @@ export function revertAppRouterLayout(code: string, importPath: string): PatchRe
     function traverse(node: any): boolean {
       if (!node || typeof node !== "object") return false;
 
-      if (
-        node.type === "JSXElement" &&
-        node.openingElement?.name?.name === "body"
-      ) {
+      if (node.type === "JSXElement" && node.openingElement?.name?.name === "body") {
         if (node.children) {
           const originalLength = node.children.length;
           node.children = node.children.filter((child: any) => {

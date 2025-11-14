@@ -169,4 +169,3 @@ export function restoreClientErrorHooks(): void {
 
   isInstrumented = false;
 }
-

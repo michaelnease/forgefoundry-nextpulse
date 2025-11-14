@@ -8,8 +8,7 @@ function safeExec(cmd: string, cwd: string): string {
       cwd,
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "ignore"],
-    })
-      .trim();
+    }).trim();
   } catch {
     return "unknown";
   }
@@ -187,4 +186,3 @@ export function findMonorepoApps(projectRoot: string): string[] {
 
   return apps;
 }
-

@@ -24,7 +24,10 @@ describe("routesScanner", () => {
   describe("detectRouterKind", () => {
     it("should detect app router", async () => {
       await fs.ensureDir(path.join(tempDir, "app"));
-      await fs.writeFile(path.join(tempDir, "app", "layout.tsx"), "export default function Layout() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "layout.tsx"),
+        "export default function Layout() {}"
+      );
 
       const kind = detectRouterKind(tempDir);
       expect(kind).toBe("app");
@@ -32,7 +35,10 @@ describe("routesScanner", () => {
 
     it("should detect pages router", async () => {
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "pages", "_app.tsx"), "export default function App() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "_app.tsx"),
+        "export default function App() {}"
+      );
 
       const kind = detectRouterKind(tempDir);
       expect(kind).toBe("pages");
@@ -41,8 +47,14 @@ describe("routesScanner", () => {
     it("should detect mixed router", async () => {
       await fs.ensureDir(path.join(tempDir, "app"));
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "app", "layout.tsx"), "export default function Layout() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "_app.tsx"), "export default function App() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "layout.tsx"),
+        "export default function Layout() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "_app.tsx"),
+        "export default function App() {}"
+      );
 
       const kind = detectRouterKind(tempDir);
       expect(kind).toBe("mixed");
@@ -57,8 +69,14 @@ describe("routesScanner", () => {
   describe("scanAppRouter", () => {
     it("should scan simple app router structure", async () => {
       await fs.ensureDir(path.join(tempDir, "app"));
-      await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function Page() {}");
-      await fs.writeFile(path.join(tempDir, "app", "layout.tsx"), "export default function Layout() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "page.tsx"),
+        "export default function Page() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "app", "layout.tsx"),
+        "export default function Layout() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -72,8 +90,14 @@ describe("routesScanner", () => {
 
     it("should handle nested routes", async () => {
       await fs.ensureDir(path.join(tempDir, "app", "about"));
-      await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function Page() {}");
-      await fs.writeFile(path.join(tempDir, "app", "about", "page.tsx"), "export default function About() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "page.tsx"),
+        "export default function Page() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "app", "about", "page.tsx"),
+        "export default function About() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -82,8 +106,14 @@ describe("routesScanner", () => {
 
     it("should handle dynamic routes", async () => {
       await fs.ensureDir(path.join(tempDir, "app", "[slug]"));
-      await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function Page() {}");
-      await fs.writeFile(path.join(tempDir, "app", "[slug]", "page.tsx"), "export default function Slug() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "page.tsx"),
+        "export default function Page() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "app", "[slug]", "page.tsx"),
+        "export default function Slug() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -94,7 +124,10 @@ describe("routesScanner", () => {
 
     it("should handle catch-all routes", async () => {
       await fs.ensureDir(path.join(tempDir, "app", "[...slug]"));
-      await fs.writeFile(path.join(tempDir, "app", "[...slug]", "page.tsx"), "export default function CatchAll() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "[...slug]", "page.tsx"),
+        "export default function CatchAll() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -105,7 +138,10 @@ describe("routesScanner", () => {
 
     it("should handle route groups", async () => {
       await fs.ensureDir(path.join(tempDir, "app", "(marketing)", "about"));
-      await fs.writeFile(path.join(tempDir, "app", "(marketing)", "about", "page.tsx"), "export default function About() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "(marketing)", "about", "page.tsx"),
+        "export default function About() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -117,7 +153,10 @@ describe("routesScanner", () => {
 
     it("should detect route handlers", async () => {
       await fs.ensureDir(path.join(tempDir, "app", "api"));
-      await fs.writeFile(path.join(tempDir, "app", "api", "route.ts"), "export async function GET() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "api", "route.ts"),
+        "export async function GET() {}"
+      );
 
       const result = scanAppRouter(tempDir);
 
@@ -135,8 +174,14 @@ describe("routesScanner", () => {
   describe("scanPagesRouter", () => {
     it("should scan simple pages router structure", async () => {
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "pages", "index.tsx"), "export default function Home() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "about.tsx"), "export default function About() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "index.tsx"),
+        "export default function Home() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "about.tsx"),
+        "export default function About() {}"
+      );
 
       const routes = scanPagesRouter(tempDir);
 
@@ -147,8 +192,14 @@ describe("routesScanner", () => {
 
     it("should handle nested routes", async () => {
       await fs.ensureDir(path.join(tempDir, "pages", "blog"));
-      await fs.writeFile(path.join(tempDir, "pages", "blog", "index.tsx"), "export default function Blog() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "blog", "[slug].tsx"), "export default function Post() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "blog", "index.tsx"),
+        "export default function Blog() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "blog", "[slug].tsx"),
+        "export default function Post() {}"
+      );
 
       const routes = scanPagesRouter(tempDir);
 
@@ -158,7 +209,10 @@ describe("routesScanner", () => {
 
     it("should handle API routes", async () => {
       await fs.ensureDir(path.join(tempDir, "pages", "api"));
-      await fs.writeFile(path.join(tempDir, "pages", "api", "posts.ts"), "export default function handler() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "api", "posts.ts"),
+        "export default function handler() {}"
+      );
 
       const routes = scanPagesRouter(tempDir);
 
@@ -168,9 +222,18 @@ describe("routesScanner", () => {
 
     it("should ignore special files", async () => {
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "pages", "_app.tsx"), "export default function App() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "_document.tsx"), "export default function Document() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "index.tsx"), "export default function Home() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "_app.tsx"),
+        "export default function App() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "_document.tsx"),
+        "export default function Document() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "index.tsx"),
+        "export default function Home() {}"
+      );
 
       const routes = scanPagesRouter(tempDir);
 
@@ -180,7 +243,10 @@ describe("routesScanner", () => {
 
     it("should handle dynamic routes", async () => {
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "pages", "[id].tsx"), "export default function Dynamic() {}");
+      await fs.writeFile(
+        path.join(tempDir, "pages", "[id].tsx"),
+        "export default function Dynamic() {}"
+      );
 
       const routes = scanPagesRouter(tempDir);
 
@@ -199,8 +265,14 @@ describe("routesScanner", () => {
     it("should scan both app and pages routers", async () => {
       await fs.ensureDir(path.join(tempDir, "app"));
       await fs.ensureDir(path.join(tempDir, "pages"));
-      await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function AppPage() {}");
-      await fs.writeFile(path.join(tempDir, "pages", "index.tsx"), "export default function PagesPage() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "page.tsx"),
+        "export default function AppPage() {}"
+      );
+      await fs.writeFile(
+        path.join(tempDir, "pages", "index.tsx"),
+        "export default function PagesPage() {}"
+      );
 
       const snapshot = scanAllRoutes(tempDir);
 
@@ -216,7 +288,10 @@ describe("routesScanner", () => {
 
     it("should return app router tree when app router exists", async () => {
       await fs.ensureDir(path.join(tempDir, "app"));
-      await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function Page() {}");
+      await fs.writeFile(
+        path.join(tempDir, "app", "page.tsx"),
+        "export default function Page() {}"
+      );
 
       const snapshot = scanAllRoutes(tempDir);
 
@@ -225,4 +300,3 @@ describe("routesScanner", () => {
     });
   });
 });
-

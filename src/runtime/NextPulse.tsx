@@ -74,18 +74,12 @@ function AnvilButton(props: {
         style={{ display: "block" }}
       >
         {/* Simplified anvil shape */}
-        <path
-          d="M4 18h16v2H4v-2z"
-          fill="currentColor"
-        />
+        <path d="M4 18h16v2H4v-2z" fill="currentColor" />
         <path
           d="M5 16h14c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1h-2V9c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H5c-.55 0-1 .45-1 1v3c0 .55.45 1 1 1z"
           fill="currentColor"
         />
-        <path
-          d="M9 7h6v2H9V7z"
-          fill="currentColor"
-        />
+        <path d="M9 7h6v2H9V7z" fill="currentColor" />
       </svg>
     </button>
   );
@@ -94,7 +88,9 @@ function AnvilButton(props: {
 export function NextPulse() {
   const [mounted, setMounted] = useState(false);
   const [metadata, setMetadata] = useState<Metadata | null>(null);
-  const [position, setPosition] = useState<"bottomRight" | "bottomLeft" | "topRight" | "topLeft">("bottomRight");
+  const [position, setPosition] = useState<"bottomRight" | "bottomLeft" | "topRight" | "topLeft">(
+    "bottomRight"
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [pathname, setPathnameState] = useState<string | null>(null);
 
@@ -108,7 +104,7 @@ export function NextPulse() {
 
     // Fetch metadata from API route
     fetch("/api/nextpulse/metadata")
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
           setMetadata(data);
@@ -120,7 +116,7 @@ export function NextPulse() {
 
     // Fetch runtime config for overlay position
     fetch("/api/nextpulse/config")
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((config: RuntimeConfig | null) => {
         if (config?.overlayPosition) {
           setPosition(config.overlayPosition);
@@ -139,7 +135,7 @@ export function NextPulse() {
 
     // Get current pathname from window.location (works in browser)
     const currentPath = typeof window !== "undefined" ? window.location.pathname : null;
-    
+
     if (currentPath && currentPath !== pathname) {
       // End previous session
       if (pathname) {
@@ -190,10 +186,7 @@ export function NextPulse() {
         onToggle={() => setIsOpen((prev) => !prev)}
         position={position}
       />
-      {isOpen && (
-        <Panel metadata={metadata} position={position} />
-      )}
+      {isOpen && <Panel metadata={metadata} position={position} />}
     </>
   );
 }
-

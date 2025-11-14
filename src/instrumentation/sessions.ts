@@ -84,9 +84,7 @@ export function endSession(): void {
     return;
   }
 
-  const activeSession = snapshot.sessions.find(
-    (s) => s.id === snapshot.activeSessionId
-  );
+  const activeSession = snapshot.sessions.find((s) => s.id === snapshot.activeSessionId);
 
   if (activeSession) {
     activeSession.finishedAt = Date.now();
@@ -223,5 +221,3 @@ export function setCurrentRoute(route: string): void {
 export function getCurrentRoute(): string | null {
   return currentRoute;
 }
-
-

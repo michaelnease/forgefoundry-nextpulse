@@ -126,7 +126,8 @@ export function detectWaterfalls(session: SessionEvent): Array<{
           startTime: currentWaterfall[0].startedAt,
           endTime: currentWaterfall[currentWaterfall.length - 1].finishedAt,
           totalDuration:
-            currentWaterfall[currentWaterfall.length - 1].finishedAt - currentWaterfall[0].startedAt,
+            currentWaterfall[currentWaterfall.length - 1].finishedAt -
+            currentWaterfall[0].startedAt,
         });
       }
       currentWaterfall = [];
@@ -239,4 +240,3 @@ export function calculatePerformanceMetrics(session: SessionEvent): {
     waterfallCount: waterfalls.length,
   };
 }
-

@@ -38,7 +38,7 @@ function generateBoundaryId(): string {
 
 /**
  * Instrument Suspense boundaries
- * 
+ *
  * Strategy: Since React Suspense is internal, we provide a wrapper component
  * that can be used to wrap Suspense boundaries, or we hook into React internals
  * if available in development mode
@@ -201,4 +201,3 @@ export function restoreSuspense(): void {
   suspenseBoundaries.clear();
   isInstrumented = false;
 }
-

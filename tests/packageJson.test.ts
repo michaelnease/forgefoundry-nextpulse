@@ -103,11 +103,7 @@ describe("packageJson - openBrowserOnStart", () => {
 
     it("should create scripts object if it doesn't exist", async () => {
       const packageJsonPath = path.join(tempDir, "package.json");
-      await fs.writeFile(
-        packageJsonPath,
-        JSON.stringify({ name: "test-app" }),
-        "utf-8"
-      );
+      await fs.writeFile(packageJsonPath, JSON.stringify({ name: "test-app" }), "utf-8");
 
       updateDevScriptForBrowser(tempDir, true);
 
@@ -151,4 +147,3 @@ describe("packageJson - openBrowserOnStart", () => {
     });
   });
 });
-

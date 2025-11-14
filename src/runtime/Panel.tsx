@@ -3,9 +3,10 @@
  * Part of NextPulse runtime - lives in package
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { StatusIcon } from "./StatusIcon.js";
-import type { RuntimeSnapshot, SessionEvent } from "../types/runtime.js";
+import type { RuntimeSnapshot } from "../types/runtime.js";
+import { buildOverlayView } from "../diagnostics/index.js";
 
 export interface Metadata {
   appName: string;
@@ -101,23 +102,33 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
   };
 
   const branchColor = metadata.gitDirty ? "#FF5E5E" : "#3CCF4E";
-  
-  // Get active session
-  const activeSession: SessionEvent | null = runtimeData?.activeSessionId
-    ? runtimeData.sessions.find((s) => s.id === runtimeData.activeSessionId) || null
-    : null;
 
-  const recentFetches = activeSession?.fetches.slice(-5) || [];
-  const lastAction = activeSession?.actions[activeSession.actions.length - 1];
-  
-  // Performance metrics
-  const slowestRsc = activeSession?.rsc.length
-    ? activeSession.rsc.reduce((slowest, current) =>
-        current.durationMs > slowest.durationMs ? current : slowest
-      )
-    : null;
-  const suspenseCount = activeSession?.suspense.length || 0;
-  const streamingCount = activeSession?.streaming.length || 0;
+  // Build overlay view from runtime data using shared diagnostics module
+  const overlayView = useMemo(() => {
+    if (!runtimeData) {
+      return null;
+    }
+    return buildOverlayView(runtimeData);
+  }, [runtimeData]);
+
+  // Update hasErrors when errors data is available
+  const overlayViewWithErrors = useMemo(() => {
+    if (!overlayView) return null;
+    return {
+      ...overlayView,
+      hasErrors: errorsData?.errors?.length > 0 || false,
+    };
+  }, [overlayView, errorsData]);
+
+  const activeSession = overlayViewWithErrors?.activeSession || null;
+  const recentFetches = overlayViewWithErrors?.recentFetches || [];
+  const lastAction =
+    overlayViewWithErrors?.recentServerActions[
+      overlayViewWithErrors.recentServerActions.length - 1
+    ];
+  const slowestRsc = overlayViewWithErrors?.slowestRscRender || null;
+  const suspenseCount = overlayViewWithErrors?.suspenseCount || 0;
+  const streamingCount = overlayViewWithErrors?.streamingCount || 0;
   const recentFetchDurations = recentFetches.map((f) => f.durationMs);
 
   return (
@@ -144,7 +155,15 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
       <div style={{ fontWeight: 600, marginBottom: "4px", fontSize: "13px" }}>
         {metadata.appName}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", opacity: 0.9 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px",
+          fontSize: "11px",
+          opacity: 0.9,
+        }}
+      >
         <div>Next.js {metadata.nextVersion}</div>
         <div>Port: {metadata.port}</div>
         <div style={{ color: branchColor }}>
@@ -156,7 +175,13 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
 
       {/* Activity Section */}
       {process.env.NODE_ENV === "development" && activeSession && (
-        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
           <button
             onClick={() => setShowActivity(!showActivity)}
             style={{
@@ -184,7 +209,14 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
                       <div style={{ fontFamily: "monospace", fontSize: "9px" }}>
                         {fetch.method} {fetch.statusCode || "..."}
                       </div>
-                      <div style={{ fontSize: "9px", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div
+                        style={{
+                          fontSize: "9px",
+                          color: "#94a3b8",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
                         {fetch.url.length > 30 ? fetch.url.substring(0, 30) + "..." : fetch.url}
                       </div>
                     </div>
@@ -209,7 +241,13 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
 
       {/* Performance Section */}
       {process.env.NODE_ENV === "development" && activeSession && (
-        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
           <button
             onClick={() => setShowPerf(!showPerf)}
             style={{
@@ -229,7 +267,8 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
             <div style={{ marginTop: "8px", fontSize: "10px" }}>
               {slowestRsc && (
                 <div style={{ marginBottom: "6px" }}>
-                  <strong>Slowest RSC:</strong> {slowestRsc.componentName || "Unknown"} ({slowestRsc.durationMs}ms)
+                  <strong>Slowest RSC:</strong> {slowestRsc.componentName || "Unknown"} (
+                  {slowestRsc.durationMs}ms)
                 </div>
               )}
               <div style={{ marginBottom: "6px" }}>
@@ -255,7 +294,13 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
 
       {/* Bundles Section */}
       {process.env.NODE_ENV === "development" && bundlesData && (
-        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
           <button
             onClick={() => setShowBundles(!showBundles)}
             style={{
@@ -282,9 +327,7 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
               {bundlesData.chunks && bundlesData.chunks.length > 0 && (
                 <div style={{ marginBottom: "6px" }}>
                   <strong>Largest Chunk:</strong>{" "}
-                  {formatBytes(
-                    Math.max(...bundlesData.chunks.map((c: any) => c.size || 0))
-                  )}
+                  {formatBytes(Math.max(...bundlesData.chunks.map((c: any) => c.size || 0)))}
                 </div>
               )}
             </div>
@@ -294,7 +337,13 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
 
       {/* Errors Section */}
       {process.env.NODE_ENV === "development" && errorsData && (
-        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+        <div
+          style={{
+            marginTop: "12px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
           <button
             onClick={() => setShowErrors(!showErrors)}
             style={{

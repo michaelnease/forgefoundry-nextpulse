@@ -68,14 +68,10 @@ describe("config integration tests", () => {
   describe("enabled config", () => {
     it("should skip injection when enabled is false", async () => {
       await setupAppRouter();
-      
+
       // Create config with enabled: false
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ enabled: false }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ enabled: false }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -103,13 +99,9 @@ describe("config integration tests", () => {
 
     it("should inject when enabled is true", async () => {
       await setupAppRouter();
-      
+
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ enabled: true }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ enabled: true }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -138,13 +130,9 @@ describe("config integration tests", () => {
   describe("overlayPosition config", () => {
     it("should pass overlayPosition prop when configured", async () => {
       await setupAppRouter();
-      
+
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ overlayPosition: "topLeft" }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ overlayPosition: "topLeft" }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -197,38 +185,34 @@ describe("config integration tests", () => {
 
     it("should handle all overlayPosition values", async () => {
       const positions = ["bottomRight", "bottomLeft", "topRight", "topLeft"] as const;
-      
+
       for (const position of positions) {
         await setupAppRouter();
-        
+
         const configPath = path.join(tempDir, CONFIG_FILENAME);
-        await fs.writeFile(
-          configPath,
-          JSON.stringify({ overlayPosition: position }),
-          "utf-8"
-        );
+        await fs.writeFile(configPath, JSON.stringify({ overlayPosition: position }), "utf-8");
 
         // Test the config functionality directly without importing the full CLI
-      // This avoids process.exit issues
-      const testConfig = readConfig(tempDir);
-      if (isEnabled(testConfig)) {
-        const routerType = detectRouterType(tempDir);
-        const entryFile = getEntryFile(tempDir, routerType);
-        if (entryFile) {
-          const projectInfo = getProjectInfo(tempDir);
-          const props: Record<string, string> = {};
-          if (testConfig.overlayPosition) props.overlayPosition = testConfig.overlayPosition;
-          injectIntoEntryFile(entryFile, routerType, props);
+        // This avoids process.exit issues
+        const testConfig = readConfig(tempDir);
+        if (isEnabled(testConfig)) {
+          const routerType = detectRouterType(tempDir);
+          const entryFile = getEntryFile(tempDir, routerType);
+          if (entryFile) {
+            const projectInfo = getProjectInfo(tempDir);
+            const props: Record<string, string> = {};
+            if (testConfig.overlayPosition) props.overlayPosition = testConfig.overlayPosition;
+            injectIntoEntryFile(entryFile, routerType, props);
+          }
+          if (testConfig.openBrowserOnStart !== undefined) {
+            updateDevScriptForBrowser(tempDir, testConfig.openBrowserOnStart);
+          }
         }
-        if (testConfig.openBrowserOnStart !== undefined) {
-          updateDevScriptForBrowser(tempDir, testConfig.openBrowserOnStart);
-        }
-      }
 
         const layoutPath = path.join(tempDir, "app/layout.tsx");
         const layoutContent = await fs.readFile(layoutPath, "utf-8");
         expect(layoutContent).toContain(`overlayPosition="${position}"`);
-        
+
         // Clean up for next iteration
         await fs.remove(tempDir);
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "nextpulse-integration-test-"));
@@ -240,13 +224,9 @@ describe("config integration tests", () => {
   describe("openBrowserOnStart config", () => {
     it("should add --open flag when openBrowserOnStart is true", async () => {
       await setupAppRouter();
-      
+
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ openBrowserOnStart: true }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ openBrowserOnStart: true }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -272,13 +252,9 @@ describe("config integration tests", () => {
 
     it("should not add --open flag when openBrowserOnStart is false", async () => {
       await setupAppRouter();
-      
+
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ openBrowserOnStart: false }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ openBrowserOnStart: false }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -304,14 +280,10 @@ describe("config integration tests", () => {
 
     it("should remove --open flag when switching from true to false", async () => {
       await setupAppRouter();
-      
+
       // First init with openBrowserOnStart: true
       const configPath = path.join(tempDir, CONFIG_FILENAME);
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ openBrowserOnStart: true }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ openBrowserOnStart: true }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -334,11 +306,7 @@ describe("config integration tests", () => {
       expect(pkg.scripts.dev).toContain("--open");
 
       // Update config to false
-      await fs.writeFile(
-        configPath,
-        JSON.stringify({ openBrowserOnStart: false }),
-        "utf-8"
-      );
+      await fs.writeFile(configPath, JSON.stringify({ openBrowserOnStart: false }), "utf-8");
 
       // Test the config functionality directly without importing the full CLI
       // This avoids process.exit issues
@@ -365,7 +333,7 @@ describe("config integration tests", () => {
   describe("combined config options", () => {
     it("should handle all config options together", async () => {
       await setupAppRouter();
-      
+
       const configPath = path.join(tempDir, CONFIG_FILENAME);
       await fs.writeFile(
         configPath,
@@ -406,4 +374,3 @@ describe("config integration tests", () => {
     });
   });
 });
-

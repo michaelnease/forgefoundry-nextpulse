@@ -21,16 +21,22 @@ export function insertImport(src: string): string {
   return line + src;
 }
 
-export function insertComponent(src: string, router: "app" | "pages", props?: Record<string, string>): string {
+export function insertComponent(
+  src: string,
+  router: "app" | "pages",
+  props?: Record<string, string>
+): string {
   if (hasComponent(src)) return src;
-  
+
   // Build props string for JSX attributes
-  const propsStr = props && Object.keys(props).length > 0
-    ? " " + Object.entries(props)
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(" ")
-    : "";
-  
+  const propsStr =
+    props && Object.keys(props).length > 0
+      ? " " +
+        Object.entries(props)
+          .map(([key, value]) => `${key}="${value}"`)
+          .join(" ")
+      : "";
+
   const dev = `{process.env.NODE_ENV === "development" && <NextPulse${propsStr} />}`;
   if (router === "app") {
     // try to place before closing </body>
@@ -83,7 +89,10 @@ export function injectIntoEntryFile(
 /**
  * Create minimal App Router layout if it doesn't exist
  */
-export function createMinimalAppLayout(projectRoot: string, props?: Record<string, string>): string {
+export function createMinimalAppLayout(
+  projectRoot: string,
+  props?: Record<string, string>
+): string {
   const layoutPath = join(projectRoot, "app", "layout.tsx");
   const layoutDir = join(projectRoot, "app");
 
@@ -92,12 +101,14 @@ export function createMinimalAppLayout(projectRoot: string, props?: Record<strin
   }
 
   // Build props string for JSX attributes
-  const propsStr = props && Object.keys(props).length > 0
-    ? " " + Object.entries(props)
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(" ")
-    : "";
-  
+  const propsStr =
+    props && Object.keys(props).length > 0
+      ? " " +
+        Object.entries(props)
+          .map(([key, value]) => `${key}="${value}"`)
+          .join(" ")
+      : "";
+
   const dev = `{process.env.NODE_ENV === "development" && <NextPulse${propsStr} />}`;
 
   const content = `import type { Metadata } from "next";

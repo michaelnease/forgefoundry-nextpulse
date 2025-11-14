@@ -112,4 +112,3 @@ describe("CLI snapshot command", () => {
     }
   });
 });
-

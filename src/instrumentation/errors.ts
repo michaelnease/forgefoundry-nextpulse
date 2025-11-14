@@ -3,7 +3,13 @@
  * Collects errors and log events from the dev runtime
  */
 
-import type { ErrorEvent, LogEvent, ErrorLogSnapshot, ErrorSource, LogLevel } from "../types/errors.js";
+import type {
+  ErrorEvent,
+  LogEvent,
+  ErrorLogSnapshot,
+  ErrorSource,
+  LogLevel,
+} from "../types/errors.js";
 import { getCurrentRoute, getRuntimeSnapshot } from "./sessions.js";
 
 // In-memory snapshot (singleton)
@@ -113,4 +119,3 @@ export function clearErrorsAndLogs(): void {
   snapshot.logs = [];
   snapshot.lastUpdated = Date.now();
 }
-

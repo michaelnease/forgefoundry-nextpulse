@@ -16,13 +16,13 @@ function extractActionName(fn: Function): string {
   if (fn.name) {
     return fn.name;
   }
-  
+
   // Try to get name from toString
   const match = fn.toString().match(/function\s+(\w+)/);
   if (match) {
     return match[1];
   }
-  
+
   return "anonymous";
 }
 
@@ -33,7 +33,7 @@ function extractFileFromStack(): string | null {
   try {
     const stack = new Error().stack || "";
     const lines = stack.split("\n");
-    
+
     // Look for file paths in stack trace
     for (const line of lines) {
       const match = line.match(/\(([^)]+\.(ts|tsx|js|jsx)):\d+:\d+\)/);
@@ -44,17 +44,14 @@ function extractFileFromStack(): string | null {
   } catch {
     // Ignore errors
   }
-  
+
   return null;
 }
 
 /**
  * Wrap a server action function
  */
-function wrapServerAction<T extends (...args: any[]) => Promise<any>>(
-  action: T,
-  name?: string
-): T {
+function wrapServerAction<T extends (...args: any[]) => Promise<any>>(action: T, name?: string): T {
   const actionName = name || extractActionName(action);
   const file = extractFileFromStack();
   const route = getCurrentRoute();
@@ -116,7 +113,7 @@ function wrapServerAction<T extends (...args: any[]) => Promise<any>>(
 
 /**
  * Instrument server actions
- * 
+ *
  * Note: This is a simplified approach. In practice, Next.js server actions
  * are registered through a specific mechanism. This function provides
  * a way to wrap actions manually or through a helper.
@@ -160,4 +157,3 @@ export function createInstrumentedAction<T extends (...args: any[]) => Promise<a
 export function restoreServerActions(): void {
   isInstrumented = false;
 }
-

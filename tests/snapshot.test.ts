@@ -15,7 +15,7 @@ describe("Diagnostic Snapshot", () => {
   beforeEach(() => {
     tempDir = join(os.tmpdir(), `nextpulse-snapshot-test-${Date.now()}`);
     mkdirSync(tempDir, { recursive: true });
-    
+
     // Create minimal package.json
     writeFileSync(
       join(tempDir, "package.json"),
@@ -147,4 +147,3 @@ describe("Diagnostic Snapshot", () => {
     expect(snapshot.errors.logs).toEqual([]);
   });
 });
-

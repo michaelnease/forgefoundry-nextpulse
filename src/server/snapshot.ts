@@ -1,19 +1,18 @@
 /**
  * Diagnostic snapshot generator for NextPulse
  * Combines all diagnostic data into a single AI-readable snapshot
+ *
+ * This module now uses the shared diagnostics module for core snapshot building
+ * and adds environment-specific metadata for the full diagnostic snapshot
  */
 
+import { buildDiagnosticsSnapshot } from "../diagnostics/index.js";
 import { loadMetadata } from "./loadMetadata.js";
 import { readConfig } from "../utils/config.js";
-import { scanAllRoutes } from "./routesScanner.js";
-import { scanBundles } from "./bundleScanner.js";
-import { getRuntimeSnapshot } from "../instrumentation/sessions.js";
-import { getErrorLogSnapshot } from "../instrumentation/errors.js";
-import { buildTimelineForSession, calculatePerformanceMetrics, detectWaterfalls } from "../instrumentation/timeline.js";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
-import type { DiagnosticSnapshot, PerformanceSnapshot, EnvironmentInfo } from "../types/snapshot.js";
+import type { DiagnosticSnapshot, EnvironmentInfo } from "../types/snapshot.js";
 
 /**
  * Safely execute a shell command
@@ -110,78 +109,30 @@ function getEnvironmentInfo(projectRoot: string): EnvironmentInfo {
 }
 
 /**
- * Build performance snapshot from runtime snapshot
- */
-function buildPerformanceSnapshot(runtimeSnapshot: ReturnType<typeof getRuntimeSnapshot>): PerformanceSnapshot {
-  const enrichedSessions = runtimeSnapshot.sessions.map((session) => {
-    // Build timeline if not already built
-    const timeline = session.timeline.length > 0
-      ? session.timeline
-      : buildTimelineForSession(session);
-
-    const metrics = calculatePerformanceMetrics(session);
-    const waterfalls = detectWaterfalls(session);
-
-    return {
-      id: session.id,
-      route: session.route,
-      startedAt: session.startedAt,
-      finishedAt: session.finishedAt,
-      metrics: {
-        totalServerRenderTime: metrics.totalServerRenderTime,
-        totalStreamingTime: metrics.totalStreamingTime,
-        slowestRscComponent: metrics.slowestRscComponent
-          ? {
-              componentName: metrics.slowestRscComponent.componentName,
-              durationMs: metrics.slowestRscComponent.durationMs,
-            }
-          : null,
-        suspenseBoundaryCount: metrics.suspenseBoundaryCount,
-        waterfallCount: metrics.waterfallCount,
-      },
-      waterfalls: waterfalls.map((w) => ({
-        type: w.type,
-        events: w.events, // Keep events for context
-        totalDuration: w.totalDuration,
-      })),
-    };
-  });
-
-  return {
-    sessions: enrichedSessions,
-    activeSessionId: runtimeSnapshot.activeSessionId,
-    lastUpdated: runtimeSnapshot.lastUpdated,
-  };
-}
-
-/**
  * Generate a complete diagnostic snapshot
  * Combines all diagnostic data from all phases
+ * Uses the shared diagnostics module and adds environment-specific metadata
  */
 export async function generateDiagnosticSnapshot(projectRoot: string): Promise<DiagnosticSnapshot> {
-  // Gather all data
-  const metadata = loadMetadata(projectRoot);
+  // Use shared diagnostics module to build core snapshot
+  const diagnosticsSnapshot = buildDiagnosticsSnapshot(projectRoot);
+
+  // Add environment-specific metadata
   const config = readConfig(projectRoot);
-  const routes = scanAllRoutes(projectRoot);
-  const bundles = scanBundles(projectRoot); // May be null if .next doesn't exist
-  const runtimeSnapshot = getRuntimeSnapshot();
-  const performanceSnapshot = buildPerformanceSnapshot(runtimeSnapshot);
-  const errorsSnapshot = getErrorLogSnapshot();
   const environment = getEnvironmentInfo(projectRoot);
 
-  // Build complete snapshot
+  // Build complete snapshot (includes metadata from diagnosticsSnapshot if available)
   const snapshot: DiagnosticSnapshot = {
-    timestamp: Date.now(),
-    metadata,
+    timestamp: diagnosticsSnapshot.generatedAt,
+    metadata: diagnosticsSnapshot.metadata || loadMetadata(projectRoot),
     config,
-    routes,
-    bundles,
-    runtime: runtimeSnapshot,
-    performance: performanceSnapshot,
-    errors: errorsSnapshot,
+    routes: diagnosticsSnapshot.routes,
+    bundles: diagnosticsSnapshot.bundles,
+    runtime: diagnosticsSnapshot.runtime,
+    performance: diagnosticsSnapshot.performance,
+    errors: diagnosticsSnapshot.errors,
     environment,
   };
 
   return snapshot;
 }
-

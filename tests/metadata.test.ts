@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { generateMetadata, writeMetadataFile, readMetadataFile, generateAndWriteMetadata } from "../src/utils/metadata.js";
+import {
+  generateMetadata,
+  writeMetadataFile,
+  readMetadataFile,
+  generateAndWriteMetadata,
+} from "../src/utils/metadata.js";
 
 describe("metadata generation", () => {
   let tempDir: string;

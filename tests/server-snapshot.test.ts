@@ -40,7 +40,7 @@ describe("API /api/snapshot", () => {
   });
 
   afterEach(async () => {
-    if (tempDir && await fs.pathExists(tempDir)) {
+    if (tempDir && (await fs.pathExists(tempDir))) {
       await fs.remove(tempDir);
     }
   });
@@ -197,4 +197,3 @@ describe("API /api/snapshot", () => {
     }
   });
 });
-

@@ -196,4 +196,3 @@ describe("Bundle Scanner", () => {
     expect(result!.generatedAt).toBeLessThanOrEqual(after);
   });
 });
-

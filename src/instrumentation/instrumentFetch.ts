@@ -23,17 +23,17 @@ function detectOrigin(): FetchEvent["origin"] {
   // Try to infer from stack trace or context
   try {
     const stack = new Error().stack || "";
-    
+
     // Check for server action context
     if (stack.includes("server-action") || stack.includes("action")) {
       return "server-action";
     }
-    
+
     // Check for route handler context
     if (stack.includes("route") || stack.includes("handler")) {
       return "route-handler";
     }
-    
+
     // Default to server-component for server-side
     return "server-component";
   } catch {
@@ -124,8 +124,11 @@ export function instrumentFetch(): void {
     init?: RequestInit
   ): Promise<Response> => {
     const startedAt = Date.now();
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-    const method = (init?.method || (typeof input === "object" && "method" in input ? input.method : "GET")).toUpperCase();
+    const url =
+      typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const method = (
+      init?.method || (typeof input === "object" && "method" in input ? input.method : "GET")
+    ).toUpperCase();
     const route = getCurrentRoute();
     const origin = detectOrigin();
     const cacheMode = extractCacheMode(init);
@@ -137,7 +140,7 @@ export function instrumentFetch(): void {
     try {
       // Call original fetch
       const response = await originalFetch(input, init);
-      
+
       finishedAt = Date.now();
       statusCode = response.status;
       cacheResult = determineCacheResult(response);
@@ -228,4 +231,3 @@ export function restoreFetch(): void {
 
   isInstrumented = false;
 }
-

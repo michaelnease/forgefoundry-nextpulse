@@ -41,4 +41,3 @@ export interface BundlesSnapshot {
   totalServerSize: number;
   generatedAt: number;
 }
-

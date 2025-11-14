@@ -7,7 +7,12 @@ import {
   initializeClientErrorHooks,
   restoreClientErrorHooks,
 } from "../src/instrumentation/clientErrorHooks.js";
-import { recordError, recordLog, getErrorLogSnapshot, clearErrorsAndLogs } from "../src/instrumentation/errors.js";
+import {
+  recordError,
+  recordLog,
+  getErrorLogSnapshot,
+  clearErrorsAndLogs,
+} from "../src/instrumentation/errors.js";
 import { setCurrentRoute, beginSession } from "../src/instrumentation/sessions.js";
 
 // Mock window object for testing
@@ -204,4 +209,3 @@ describe("Client Error Hooks", () => {
     process.env.NODE_ENV = originalEnv;
   });
 });
-

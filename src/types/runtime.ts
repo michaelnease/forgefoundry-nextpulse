@@ -83,4 +83,3 @@ export interface RuntimeSnapshot {
   activeSessionId: string | null;
   lastUpdated: number;
 }
-

@@ -7,11 +7,12 @@ import { recordStreamingEvent, getCurrentRoute } from "./sessions.js";
 import type { StreamingEvent } from "../types/runtime.js";
 
 let isInstrumented = false;
-let streamingPhases: Map<string, { route: string | null; phases: StreamingEvent["phase"][] }> = new Map();
+let streamingPhases: Map<string, { route: string | null; phases: StreamingEvent["phase"][] }> =
+  new Map();
 
 /**
  * Instrument streaming phases
- * 
+ *
  * Strategy: Hook into Next.js streaming pipeline via global hooks
  * or monitor Response stream events
  */
@@ -43,13 +44,13 @@ export function instrumentStreaming(): void {
   // Try to patch Response streaming if available
   if (typeof Response !== "undefined" && Response.prototype) {
     const originalBodyGetter = Object.getOwnPropertyDescriptor(Response.prototype, "body");
-    
+
     // Monitor streaming responses
     try {
       Object.defineProperty(Response.prototype, "body", {
         get() {
           const body = originalBodyGetter?.get?.call(this);
-          
+
           if (body && body instanceof ReadableStream) {
             // This is a streaming response
             const route = getCurrentRoute();
@@ -78,7 +79,7 @@ export function instrumentStreaming(): void {
                     }
                     break;
                   }
-                  
+
                   if (!hasData) {
                     hasData = true;
                     recordStreamingEvent({
@@ -159,4 +160,3 @@ export function restoreStreaming(): void {
   streamingPhases.clear();
   isInstrumented = false;
 }
-

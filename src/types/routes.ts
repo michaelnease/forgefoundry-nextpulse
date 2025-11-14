@@ -47,4 +47,3 @@ export interface RoutesSnapshot {
   appRoutes: RouteInfo[];
   pagesRoutes: RouteInfo[];
 }
-

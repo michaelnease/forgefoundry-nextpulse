@@ -39,6 +39,14 @@ npm install -g @forgefoundry/nextpulse
 nextpulse init
 ```
 
+When you run `nextpulse init` in an interactive terminal, you'll be guided through a simple setup wizard that:
+
+1. **Detects your app** - Automatically finds your Next.js app and router type (App Router or Pages Router)
+2. **Prompts for settings** - Asks a few questions about overlay position and browser auto-open preferences
+3. **Injects the overlay** - Adds the `<NextPulse />` component to your root layout or `_app.tsx`
+4. **Creates API routes** - Generates all necessary API endpoints for runtime data, bundles, and errors
+5. **Writes config** - Creates `nextpulse.config.json` with your preferences
+
 NextPulse auto-detects your Next.js setup (App Router vs Pages Router) and injects itself automatically.
 
 ### Start Your App
@@ -69,25 +77,106 @@ Opens the dashboard at http://localhost:4337 with:
 
 ### `nextpulse init`
 
-Setup NextPulse in your Next.js app with auto-detection (zero-config).
+Setup NextPulse in your Next.js app with auto-detection and an interactive setup wizard.
 
 ```bash
 nextpulse init [options]
 ```
 
+**Interactive Mode (Default)**
+
+When run in an interactive terminal, `nextpulse init` will guide you through setup:
+
+1. **Confirm app location** - Verifies the detected Next.js app path and router type
+2. **Choose overlay position** - Select where the overlay should appear (bottom right, bottom left, top right, or top left)
+3. **Browser auto-open** - Decide if the browser should open automatically when running `nextpulse serve`
+
+**Non-Interactive Usage**
+
+For CI/CD, scripts, or when you want to skip prompts:
+
+```bash
+# Accept all defaults
+npx nextpulse init --yes
+
+# Or specify options directly
+npx nextpulse init --non-interactive --overlay-position bottomLeft --open-browser
+```
+
 **Options:**
 - `--app <path>` - Path to Next.js app root (default: `.`)
+- `-y, --yes` - Accept defaults without prompts (non-interactive)
+- `--non-interactive` - Disable interactive prompts
+- `--overlay-position <position>` - Overlay position: `bottomRight`, `bottomLeft`, `topRight`, or `topLeft`
+- `--open-browser` - Open browser automatically when running `nextpulse serve`
+- `--no-open-browser` - Do not open browser automatically
 - `--dry-run` - Show what would be done without making changes
 - `--revert` - Remove NextPulse from the project
 - `--force` - Overwrite existing files
 - `--with-dev-script` - Update package.json dev script to include NextPulse
+- `--with-webpack` - Inject metadata into next.config.js via webpack DefinePlugin
 
 **What it does:**
 1. Detects App Router vs Pages Router
 2. Creates `.nextpulse/metadata.json`
 3. Generates API routes at `/api/nextpulse/*`
 4. Injects `<NextPulse />` component into your root layout/app
-5. Creates `nextpulse.config.json` (optional)
+5. Creates `nextpulse.config.json` with your preferences or defaults
+
+### `nextpulse doctor`
+
+Run health checks to verify your NextPulse installation.
+
+```bash
+nextpulse doctor [options]
+```
+
+**What it does:**
+
+The `doctor` command performs a series of automated checks to verify that NextPulse is correctly set up in your project:
+
+1. **Config file check** - Verifies `nextpulse.config.json` exists and is valid
+2. **Metadata file check** - Verifies `.nextpulse/metadata.json` exists
+3. **Injection check** - Verifies `<NextPulse />` is injected into your app entry file
+4. **API routes check** - Verifies all required API routes are present
+5. **Diagnostics check** - Verifies the diagnostics module is available
+
+**Options:**
+- `--app <appDir>` - Path to Next.js app root (default: `.`)
+
+**Example output:**
+
+All checks passing:
+```
+[nextpulse] Running health checks...
+
+[nextpulse] ok: nextpulse.config.json found and valid
+[nextpulse] ok: .nextpulse/metadata.json found
+[nextpulse] ok: NextPulse is injected into layout
+[nextpulse] ok: All NextPulse API routes are present
+[nextpulse] ok: Diagnostics module is available
+
+[nextpulse] doctor summary: All checks passed. NextPulse should be ready to use.
+```
+
+With issues detected:
+```
+[nextpulse] Running health checks...
+
+[nextpulse] warn: nextpulse.config.json not found. Run "npx nextpulse init" to create it.
+[nextpulse] ok: .nextpulse/metadata.json found
+[nextpulse] warn: NextPulse is not injected into your app entry. Run "npx nextpulse init" or add it manually.
+[nextpulse] error: No NextPulse API routes found. Run "npx nextpulse init" to generate them.
+[nextpulse] ok: Diagnostics module is available
+
+[nextpulse] doctor summary: One or more critical issues detected. Please fix the errors above and re-run "nextpulse doctor".
+```
+
+**When to use:**
+
+- After running `nextpulse init` to confirm everything is set up correctly
+- When troubleshooting installation issues
+- Before opening a GitHub issue - run `nextpulse doctor` and include the output
 
 ### `nextpulse serve`
 

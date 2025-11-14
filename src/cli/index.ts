@@ -7,6 +7,7 @@ import { join, dirname } from "path";
 import { initCommand } from "../commands/init.js";
 import { startServer } from "../server/startServer.js";
 import { generateDiagnosticSnapshot } from "../server/snapshot.js";
+import { doctorCommand } from "../commands/doctor.js";
 import { resolve } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,7 +23,7 @@ program
 program
   .command("init")
   .description(
-    "Setup NextPulse in a Next.js app with auto-detection (zero-config)"
+    "Setup NextPulse in a Next.js app with auto-detection (interactive wizard by default)"
   )
   .option("--app <appDir>", "path to Next.js app root", ".")
   .option("--dry-run", "show what would be done without making changes")
@@ -30,12 +31,26 @@ program
   .option("--force", "overwrite existing files")
   .option("--with-webpack", "inject metadata into next.config.js via webpack DefinePlugin")
   .option("--with-dev-script", "update package.json dev script to include NextPulse")
+  .option("-y, --yes", "accept defaults without prompts (non-interactive)")
+  .option("--non-interactive", "disable interactive prompts")
+  .option(
+    "--overlay-position <position>",
+    "overlay position: bottomRight, bottomLeft, topRight, or topLeft"
+  )
+  .option("--open-browser", "open browser automatically when running nextpulse serve")
+  .option("--no-open-browser", "do not open browser automatically")
   .action(async (options) => {
     try {
       await initCommand(options);
       process.exit(0);
     } catch (error: any) {
-      console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
+      // Error messages from initCommand already include [nextpulse] prefix
+      const message = error?.message || String(error);
+      if (message.startsWith("[nextpulse]")) {
+        console.error(pc.red(message));
+      } else {
+        console.error(pc.red(`[nextpulse] error: ${message}`));
+      }
       process.exit(1);
     }
   });
@@ -83,11 +98,25 @@ program
     try {
       const projectRoot = resolve(options.path);
       const snapshot = await generateDiagnosticSnapshot(projectRoot);
-      
+
       // Print JSON to stdout (pretty-printed, 2 spaces)
       console.log(JSON.stringify(snapshot, null, 2));
     } catch (error: any) {
       console.error(pc.red(`[nextpulse] Error: ${error?.message || error}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("doctor")
+  .description("Run health checks to verify NextPulse installation")
+  .option("--app <appDir>", "path to Next.js app root", ".")
+  .action(async (options) => {
+    try {
+      const exitCode = await doctorCommand({ app: options.app });
+      process.exit(exitCode);
+    } catch (error: any) {
+      console.error(pc.red(`[nextpulse] error: ${error?.message || error}`));
       process.exit(1);
     }
   });

@@ -42,4 +42,3 @@ export interface ErrorLogSnapshot {
   logs: LogEvent[];
   lastUpdated: number;
 }
-

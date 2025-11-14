@@ -95,7 +95,7 @@ export default function App() {
 
       const result = insertComponentZeroProps(code, "app");
 
-      expect(result).toContain("{process.env.NODE_ENV === \"development\" && <NextPulse />}");
+      expect(result).toContain('{process.env.NODE_ENV === "development" && <NextPulse />}');
       expect(result).toContain("</body>");
       expect(result.indexOf("<NextPulse />")).toBeLessThan(result.indexOf("</body>"));
     });

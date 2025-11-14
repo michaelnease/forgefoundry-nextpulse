@@ -4,12 +4,9 @@ import { join } from "path";
 /**
  * Update the dev script in package.json to include --open flag if openBrowserOnStart is true
  */
-export function updateDevScriptForBrowser(
-  projectRoot: string,
-  openBrowserOnStart: boolean
-): void {
+export function updateDevScriptForBrowser(projectRoot: string, openBrowserOnStart: boolean): void {
   const packageJsonPath = join(projectRoot, "package.json");
-  
+
   if (!existsSync(packageJsonPath)) {
     return; // No package.json, skip
   }
@@ -23,10 +20,10 @@ export function updateDevScriptForBrowser(
     }
 
     const devScript = pkg.scripts.dev || "next dev";
-    
+
     // Check if --open is already present (as a separate flag, not part of another word)
     const hasOpenFlag = /\s--open(\s|$)/.test(devScript);
-    
+
     if (openBrowserOnStart && !hasOpenFlag) {
       // Add --open flag after "next dev" or at the end
       if (devScript.includes("next dev")) {
@@ -47,4 +44,3 @@ export function updateDevScriptForBrowser(
     // This is not critical functionality
   }
 }
-

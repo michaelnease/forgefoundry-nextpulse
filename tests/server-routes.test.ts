@@ -21,7 +21,10 @@ describe("Server /api/routes endpoint", () => {
   it("should return routes for app router", async () => {
     await fs.ensureDir(path.join(tempDir, "app"));
     await fs.writeFile(path.join(tempDir, "app", "page.tsx"), "export default function Page() {}");
-    await fs.writeFile(path.join(tempDir, "app", "layout.tsx"), "export default function Layout() {}");
+    await fs.writeFile(
+      path.join(tempDir, "app", "layout.tsx"),
+      "export default function Layout() {}"
+    );
 
     await startServer({
       port: testPort,
@@ -46,8 +49,14 @@ describe("Server /api/routes endpoint", () => {
 
   it("should return routes for pages router", async () => {
     await fs.ensureDir(path.join(tempDir, "pages"));
-    await fs.writeFile(path.join(tempDir, "pages", "index.tsx"), "export default function Home() {}");
-    await fs.writeFile(path.join(tempDir, "pages", "about.tsx"), "export default function About() {}");
+    await fs.writeFile(
+      path.join(tempDir, "pages", "index.tsx"),
+      "export default function Home() {}"
+    );
+    await fs.writeFile(
+      path.join(tempDir, "pages", "about.tsx"),
+      "export default function About() {}"
+    );
 
     await startServer({
       port: testPort,
@@ -161,4 +170,3 @@ function findAvailablePort(): Promise<number> {
     server.on("error", reject);
   });
 }
-

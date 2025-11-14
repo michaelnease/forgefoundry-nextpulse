@@ -85,8 +85,24 @@ export default function App({ Component, pageProps }: AppProps) {
       expect(await fs.pathExists(metadataPath)).toBe(true);
 
       // Check API routes were created
-      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(true);
-      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/config/route.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/config/route.ts"))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/runtime/route.ts"))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/bundles/route.ts"))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/errors/route.ts"))).toBe(
+        true
+      );
+      expect(
+        await fs.pathExists(path.join(tempDir, "app/api/nextpulse/diagnostics/route.ts"))
+      ).toBe(true);
     });
 
     it("should be idempotent on re-run", async () => {
@@ -134,20 +150,24 @@ export default function App({ Component, pageProps }: AppProps) {
       // Verify metadata and API routes were added
       const metadataPath = path.join(tempDir, ".nextpulse/metadata.json");
       expect(await fs.pathExists(metadataPath)).toBe(true);
-      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(
+        true
+      );
 
       // Revert
       await initCommand({ app: tempDir, revert: true });
 
       // Metadata and API routes should be removed
       expect(await fs.pathExists(metadataPath)).toBe(false);
-      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(false);
+      expect(await fs.pathExists(path.join(tempDir, "app/api/nextpulse/metadata/route.ts"))).toBe(
+        false
+      );
 
       // Layout should be clean
       const layoutPath = path.join(tempDir, "app/layout.tsx");
       const layoutContent = await fs.readFile(layoutPath, "utf-8");
       expect(layoutContent).not.toContain("NextPulse");
-      expect(layoutContent).not.toContain('import { NextPulse }');
+      expect(layoutContent).not.toContain("import { NextPulse }");
     });
 
     it("should work with .jsx extension", async () => {
@@ -196,6 +216,12 @@ export default function App({ Component, pageProps }: AppProps) {
       // Check API routes were created
       expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/metadata.ts"))).toBe(true);
       expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/config.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/runtime.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/bundles.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/errors.ts"))).toBe(true);
+      expect(await fs.pathExists(path.join(tempDir, "pages/api/nextpulse/diagnostics.ts"))).toBe(
+        true
+      );
     });
 
     it("should be idempotent on re-run", async () => {
@@ -255,8 +281,8 @@ export default function App({ Component, pageProps }: AppProps) {
   describe("Error handling", () => {
     it("should throw if no Next.js app detected", async () => {
       // Empty temp dir with no app or pages folder
-      await expect(initCommand({ app: tempDir })).rejects.toThrow(
-        "Could not detect Next.js app"
+      await expect(initCommand({ app: tempDir, yes: true })).rejects.toThrow(
+        /Could not find a Next.js app/
       );
     });
   });

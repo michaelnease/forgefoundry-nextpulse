@@ -176,12 +176,7 @@ function scanAppRouterDirectory(
         };
 
         // Recursively scan child directory
-        const childRoutes = scanAppRouterDirectory(
-          projectRoot,
-          fullPath,
-          childSegments,
-          childNode
-        );
+        const childRoutes = scanAppRouterDirectory(projectRoot, fullPath, childSegments, childNode);
 
         routes.push(...childRoutes);
         treeNode.children.push(childNode);
@@ -252,28 +247,18 @@ export function scanAppRouter(
   };
 
   // Check for root layout
-  const rootLayout = APP_ROUTER_FILES.layout.find((f) =>
-    existsSync(join(appPath, f))
-  );
+  const rootLayout = APP_ROUTER_FILES.layout.find((f) => existsSync(join(appPath, f)));
   if (rootLayout) {
     rootNode.hasLayout = true;
-    const filePath = relative(projectRoot, join(appPath, rootLayout)).replace(
-      /\\/g,
-      "/"
-    );
+    const filePath = relative(projectRoot, join(appPath, rootLayout)).replace(/\\/g, "/");
     rootNode.hasLayout = true;
   }
 
   // Check for root page
-  const rootPage = APP_ROUTER_FILES.page.find((f) =>
-    existsSync(join(appPath, f))
-  );
+  const rootPage = APP_ROUTER_FILES.page.find((f) => existsSync(join(appPath, f)));
   if (rootPage) {
     rootNode.hasPage = true;
-    const filePath = relative(projectRoot, join(appPath, rootPage)).replace(
-      /\\/g,
-      "/"
-    );
+    const filePath = relative(projectRoot, join(appPath, rootPage)).replace(/\\/g, "/");
     rootNode.hasPage = true;
   }
 
@@ -282,9 +267,7 @@ export function scanAppRouter(
 
   // Add root routes if they exist
   if (rootNode.hasLayout) {
-    const layoutFile = APP_ROUTER_FILES.layout.find((f) =>
-      existsSync(join(appPath, f))
-    );
+    const layoutFile = APP_ROUTER_FILES.layout.find((f) => existsSync(join(appPath, f)));
     if (layoutFile) {
       routes.unshift({
         router: "app",
@@ -298,9 +281,7 @@ export function scanAppRouter(
   }
 
   if (rootNode.hasPage) {
-    const pageFile = APP_ROUTER_FILES.page.find((f) =>
-      existsSync(join(appPath, f))
-    );
+    const pageFile = APP_ROUTER_FILES.page.find((f) => existsSync(join(appPath, f)));
     if (pageFile) {
       routes.unshift({
         router: "app",
@@ -319,14 +300,16 @@ export function scanAppRouter(
 /**
  * Convert Pages Router file path to route path
  */
-function pagesPathToRoute(filePath: string, projectRoot: string): {
+function pagesPathToRoute(
+  filePath: string,
+  projectRoot: string
+): {
   path: string;
   kind: RouteKind;
   segmentType: SegmentType;
 } {
   // Remove project root and pages/ prefix
-  let relativePath = relative(join(projectRoot, PAGES_DIR), filePath)
-    .replace(/\\/g, "/");
+  let relativePath = relative(join(projectRoot, PAGES_DIR), filePath).replace(/\\/g, "/");
 
   // Remove extension
   relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "");
@@ -371,10 +354,7 @@ function pagesPathToRoute(filePath: string, projectRoot: string): {
 /**
  * Scan Pages Router directory recursively
  */
-function scanPagesRouterDirectory(
-  projectRoot: string,
-  dirPath: string
-): RouteInfo[] {
+function scanPagesRouterDirectory(projectRoot: string, dirPath: string): RouteInfo[] {
   const routes: RouteInfo[] = [];
 
   if (!existsSync(dirPath)) {
@@ -407,10 +387,7 @@ function scanPagesRouterDirectory(
         // Check if it's a valid page file
         const ext = entry.name.substring(entry.name.lastIndexOf("."));
         if (FILE_EXTENSIONS.includes(ext)) {
-          const { path, kind, segmentType } = pagesPathToRoute(
-            fullPath,
-            projectRoot
-          );
+          const { path, kind, segmentType } = pagesPathToRoute(fullPath, projectRoot);
           const filePath = relative(projectRoot, fullPath).replace(/\\/g, "/");
 
           routes.push({
@@ -433,10 +410,7 @@ function scanPagesRouterDirectory(
 /**
  * Scan Pages Router
  */
-export function scanPagesRouter(
-  projectRoot: string,
-  pagesDir: string = PAGES_DIR
-): RouteInfo[] {
+export function scanPagesRouter(projectRoot: string, pagesDir: string = PAGES_DIR): RouteInfo[] {
   const pagesPath = join(projectRoot, pagesDir);
 
   if (!existsSync(pagesPath)) {
@@ -449,10 +423,7 @@ export function scanPagesRouter(
 /**
  * Scan all routes in a Next.js project
  */
-export function scanAllRoutes(
-  projectRoot: string,
-  appDir: string = APP_DIR
-): RoutesSnapshot {
+export function scanAllRoutes(projectRoot: string, appDir: string = APP_DIR): RoutesSnapshot {
   if (!existsSync(projectRoot)) {
     return { appRoutes: [], pagesRoutes: [] };
   }
@@ -466,4 +437,3 @@ export function scanAllRoutes(
     pagesRoutes,
   };
 }
-

@@ -1,20 +1,28 @@
 /**
- * NextPulse instrumentation initialization
- * Sets up fetch, server action, RSC, Suspense, and streaming tracking in development mode
+ * Instrumentation utilities exported for use in generated API routes
+ * These functions allow NextPulse API routes to access runtime data
  */
 
-import { instrumentFetch } from "./instrumentFetch.js";
-import { instrumentServerActions } from "./instrumentServerActions.js";
-import { instrumentRSC } from "./instrumentRSC.js";
-import { instrumentSuspense } from "./instrumentSuspense.js";
-import { instrumentStreaming } from "./instrumentStreaming.js";
-import { initializeClientErrorHooks } from "./clientErrorHooks.js";
+export { getRuntimeSnapshot } from "./sessions.js";
+export { getErrorLogSnapshot, clearErrorsAndLogs } from "./errors.js";
+export { scanBundles } from "../server/bundleScanner.js";
 
-let isInitialized = false;
+// Re-export instrumentation setup functions
+export { instrumentFetch } from "./instrumentFetch.js";
+export { instrumentRSC } from "./instrumentRSC.js";
+export { instrumentServerActions } from "./instrumentServerActions.js";
+export { instrumentSuspense } from "./instrumentSuspense.js";
+export { instrumentStreaming } from "./instrumentStreaming.js";
+export { initializeClientErrorHooks } from "./clientErrorHooks.js";
+
+// Import for use in initializeInstrumentation
+import { initializeClientErrorHooks } from "./clientErrorHooks.js";
+import { instrumentFetch } from "./instrumentFetch.js";
+import { instrumentSuspense } from "./instrumentSuspense.js";
 
 /**
- * Initialize all instrumentation
- * Should be called once at module load time (development only)
+ * Initialize all NextPulse instrumentation
+ * Call this once in development mode to set up all runtime tracking
  */
 export function initializeInstrumentation(): void {
   // Only initialize in development
@@ -22,59 +30,13 @@ export function initializeInstrumentation(): void {
     return;
   }
 
-  // Prevent double initialization
-  if (isInitialized) {
-    return;
-  }
-
-  try {
-    // Instrument fetch
+  // Initialize client-side error tracking
+  if (typeof window !== "undefined") {
+    initializeClientErrorHooks();
     instrumentFetch();
-
-    // Instrument server actions
-    instrumentServerActions();
-
-    // Instrument RSC rendering
-    instrumentRSC();
-
-    // Instrument Suspense boundaries
     instrumentSuspense();
-
-    // Instrument streaming phases
-    instrumentStreaming();
-
-    // Initialize client-side error hooks (browser only)
-    if (typeof window !== "undefined") {
-      initializeClientErrorHooks();
-    }
-
-    isInitialized = true;
-  } catch (error) {
-    // Silently fail if instrumentation can't be set up
-    // This ensures production builds never break
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[nextpulse] Failed to initialize instrumentation:", error);
-    }
   }
-}
 
-/**
- * Check if instrumentation is initialized
- */
-export function isInstrumentationInitialized(): boolean {
-  return isInitialized;
+  // Server-side instrumentation is typically set up via Next.js middleware or instrumentation hook
+  // These are called automatically when the module is imported in the right context
 }
-
-// Auto-initialize in development when module is loaded
-if (typeof window !== "undefined" || typeof globalThis !== "undefined") {
-  // Only auto-initialize on client-side or in Node.js
-  // Server-side initialization should be explicit
-  if (process.env.NODE_ENV === "development") {
-    // For client-side, initialize immediately
-    // For server-side, we'll initialize via NextPulse component or middleware
-    if (typeof window !== "undefined") {
-      initializeInstrumentation();
-    }
-  }
-}
-

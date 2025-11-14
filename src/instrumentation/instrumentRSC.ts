@@ -210,7 +210,7 @@ function wrapSyncComponent<T extends (...args: any[]) => any>(component: T, name
 
 /**
  * Instrument RSC components
- * 
+ *
  * Strategy: Provide a global hook that Next.js can use, or wrap components manually
  * Since Next.js RSC rendering is internal, we provide utilities that can be used
  * to wrap components or hook into the render pipeline
@@ -269,4 +269,3 @@ export function restoreRSC(): void {
   }
   isInstrumented = false;
 }
-

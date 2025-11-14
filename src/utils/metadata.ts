@@ -34,7 +34,9 @@ function safeExec(command: string): string | null {
 /**
  * Read package.json safely
  */
-function readPackageJson(projectRoot: string): { name?: string; dependencies?: Record<string, string> } | null {
+function readPackageJson(
+  projectRoot: string
+): { name?: string; dependencies?: Record<string, string> } | null {
   try {
     const pkgPath = join(projectRoot, "package.json");
     if (!existsSync(pkgPath)) return null;

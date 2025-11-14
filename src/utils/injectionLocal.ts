@@ -44,9 +44,11 @@ export function insertComponentZeroProps(src: string, router: "app" | "pages"): 
     // Match: return <Component {...pageProps} />;
     const directJsxReturn = /return\s+(<\w+[^>]*>)/m;
     if (directJsxReturn.test(src)) {
-      return src.replace(directJsxReturn, (match, jsx) => {
-        return `return (\n    <>\n      ${dev}\n      ${jsx}`;
-      }).replace(/(<\/\w+>)\s*;/m, "$1\n    </>\n  );");
+      return src
+        .replace(directJsxReturn, (match, jsx) => {
+          return `return (\n    <>\n      ${dev}\n      ${jsx}`;
+        })
+        .replace(/(<\/\w+>)\s*;/m, "$1\n    </>\n  );");
     }
   }
 
@@ -60,10 +62,7 @@ export function insertComponentZeroProps(src: string, router: "app" | "pages"): 
  * Inject NextPulse with package import and zero props
  * Idempotent: skips if both import and component already exist
  */
-export function injectNextPulse(
-  entryFile: string,
-  routerType: RouterType
-): void {
+export function injectNextPulse(entryFile: string, routerType: RouterType): void {
   if (!existsSync(entryFile)) {
     throw new Error(`Entry file not found: ${entryFile}`);
   }
@@ -103,11 +102,20 @@ export function removeNextPulse(entryFile: string): void {
   let content = readFileSync(entryFile, "utf-8");
 
   // Remove import (both old local and new package imports)
-  content = content.replace(/import\s+\{[^}]*NextPulse[^}]*\}\s+from\s+["'][\.\/]*nextpulse\/NextPulseDev["'];?\n?/g, "");
-  content = content.replace(/import\s+\{[^}]*NextPulse[^}]*\}\s+from\s+["']@forgefoundry\/nextpulse["'];?\n?/g, "");
+  content = content.replace(
+    /import\s+\{[^}]*NextPulse[^}]*\}\s+from\s+["'][\.\/]*nextpulse\/NextPulseDev["'];?\n?/g,
+    ""
+  );
+  content = content.replace(
+    /import\s+\{[^}]*NextPulse[^}]*\}\s+from\s+["']@forgefoundry\/nextpulse["'];?\n?/g,
+    ""
+  );
 
   // Remove component
-  content = content.replace(/\s*\{process\.env\.NODE_ENV\s*===\s*["']development["']\s*&&\s*<NextPulse\s*\/>\}/g, "");
+  content = content.replace(
+    /\s*\{process\.env\.NODE_ENV\s*===\s*["']development["']\s*&&\s*<NextPulse\s*\/>\}/g,
+    ""
+  );
 
   writeFileSync(entryFile, content, "utf-8");
 }

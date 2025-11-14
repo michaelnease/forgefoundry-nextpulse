@@ -21,16 +21,8 @@ export function StatusIcon({ dirty }: StatusIconProps) {
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: "inline-block", verticalAlign: "middle", marginLeft: "4px" }}
       >
-        <path
-          d="M7 0L0 12h14L7 0z"
-          fill="#FF5E5E"
-        />
-        <path
-          d="M7 5v3M7 9.5v1"
-          stroke="#fff"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
+        <path d="M7 0L0 12h14L7 0z" fill="#FF5E5E" />
+        <path d="M7 5v3M7 9.5v1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }

@@ -27,7 +27,9 @@ function safeExec(command: string, cwd: string): string | null {
 /**
  * Read package.json safely
  */
-function readPackageJson(projectRoot: string): { name?: string; dependencies?: Record<string, string> } | null {
+function readPackageJson(
+  projectRoot: string
+): { name?: string; dependencies?: Record<string, string> } | null {
   try {
     const pkgPath = join(projectRoot, "package.json");
     if (!existsSync(pkgPath)) return null;
@@ -99,11 +101,13 @@ export function loadMetadata(projectRoot: string): Metadata {
   // Priority 1: Environment variables
   const envMetadata: Partial<Metadata> = {};
   if (process.env.NEXTPULSE_APP_NAME) envMetadata.appName = process.env.NEXTPULSE_APP_NAME;
-  if (process.env.NEXTPULSE_NEXT_VERSION) envMetadata.nextVersion = process.env.NEXTPULSE_NEXT_VERSION;
+  if (process.env.NEXTPULSE_NEXT_VERSION)
+    envMetadata.nextVersion = process.env.NEXTPULSE_NEXT_VERSION;
   if (process.env.NEXTPULSE_GIT_BRANCH) envMetadata.gitBranch = process.env.NEXTPULSE_GIT_BRANCH;
   if (process.env.NEXTPULSE_GIT_SHA) envMetadata.gitSha = process.env.NEXTPULSE_GIT_SHA;
   if (process.env.NEXTPULSE_GIT_DIRTY !== undefined) {
-    envMetadata.gitDirty = process.env.NEXTPULSE_GIT_DIRTY === "true" || process.env.NEXTPULSE_GIT_DIRTY === "1";
+    envMetadata.gitDirty =
+      process.env.NEXTPULSE_GIT_DIRTY === "true" || process.env.NEXTPULSE_GIT_DIRTY === "1";
   }
   if (process.env.PORT || process.env.NEXT_PUBLIC_PORT) {
     envMetadata.port = getPort();
@@ -160,4 +164,3 @@ export function loadMetadata(projectRoot: string): Metadata {
 
   return metadata;
 }
-

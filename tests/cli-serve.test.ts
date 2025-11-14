@@ -79,4 +79,3 @@ describe("CLI serve command", () => {
     }
   });
 });
-

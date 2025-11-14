@@ -74,7 +74,8 @@ export function updateNextConfig(
   const isESM = configPath.endsWith(".mjs") || content.includes("export default");
 
   // Check if webpack import exists
-  const hasWebpackImport = content.includes("import webpack from") || content.includes("const webpack = require");
+  const hasWebpackImport =
+    content.includes("import webpack from") || content.includes("const webpack = require");
 
   // Add webpack import if needed
   if (!hasWebpackImport) {
@@ -114,7 +115,11 @@ export function updateNextConfig(
   turbopack: {},`;
       content = content.slice(0, insertPosition) + webpackFunction + content.slice(insertPosition);
     } else {
-      console.warn(pc.yellow("[nextpulse] Could not find config object in next.config. Skipping webpack injection."));
+      console.warn(
+        pc.yellow(
+          "[nextpulse] Could not find config object in next.config. Skipping webpack injection."
+        )
+      );
       return "skipped";
     }
   }
@@ -164,7 +169,9 @@ export function removeNextPulseFromConfig(
   }
 
   writeFileSync(configPath, content, "utf-8");
-  console.log(pc.green(`[nextpulse] removed NextPulse config from ${configPath.replace(projectRoot, ".")}`));
+  console.log(
+    pc.green(`[nextpulse] removed NextPulse config from ${configPath.replace(projectRoot, ".")}`)
+  );
 
   return "updated";
 }

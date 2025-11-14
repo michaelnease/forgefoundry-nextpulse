@@ -174,13 +174,8 @@ describe("Error and Log Tracking", () => {
     });
 
     it("should support different error sources", () => {
-      const sources: Array<"server-action" | "route-handler" | "rsc-render" | "client" | "fetch"> = [
-        "server-action",
-        "route-handler",
-        "rsc-render",
-        "client",
-        "fetch",
-      ];
+      const sources: Array<"server-action" | "route-handler" | "rsc-render" | "client" | "fetch"> =
+        ["server-action", "route-handler", "rsc-render", "client", "fetch"];
 
       sources.forEach((source) => {
         const error = recordError({
@@ -207,4 +202,3 @@ describe("Error and Log Tracking", () => {
     });
   });
 });
-

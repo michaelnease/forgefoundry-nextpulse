@@ -7,18 +7,70 @@ import { generateAndWriteMetadata } from "../utils/metadata.js";
 import { generateApiRoutes, removeApiRoutes } from "../utils/generateFiles.js";
 import { injectNextPulse, removeNextPulse } from "../utils/injectionLocal.js";
 import { updateNextConfig } from "../utils/nextConfig.js";
+import { readConfig, writeConfig, type NextPulseConfig } from "../utils/config.js";
+import { runInitWizard, isInteractive } from "../utils/wizard.js";
 
 interface InitOptions {
-  app: string;
+  app?: string;
   dryRun?: boolean;
   revert?: boolean;
   withDevScript?: boolean;
   withWebpack?: boolean;
   force?: boolean;
+  yes?: boolean;
+  nonInteractive?: boolean;
+  overlayPosition?: NextPulseConfig["overlayPosition"];
+  openBrowser?: boolean;
+  noOpenBrowser?: boolean;
 }
 
 export async function initCommand(options: InitOptions): Promise<void> {
-  const appRoot = path.resolve(options.app);
+  // Determine if we should run interactively
+  const shouldRunWizard =
+    !options.nonInteractive && !options.yes && isInteractive() && !options.revert;
+
+  // Start with detected or provided app root
+  let appRoot = path.resolve(options.app || ".");
+
+  // Run wizard if interactive
+  let configOverrides: Partial<NextPulseConfig> = {};
+  if (shouldRunWizard) {
+    try {
+      const detectedRouterType = await detectRouterType(appRoot);
+      let existingConfig: Partial<NextPulseConfig> | null = null;
+      try {
+        const configContent = await readFileSafe(path.join(appRoot, "nextpulse.config.json"));
+        if (configContent) {
+          existingConfig = JSON.parse(configContent);
+        }
+      } catch {
+        // Ignore parse errors, use null
+      }
+
+      const wizardAnswers = await runInitWizard(appRoot, detectedRouterType, existingConfig);
+
+      appRoot = path.resolve(wizardAnswers.appRoot);
+      configOverrides = {
+        overlayPosition: wizardAnswers.overlayPosition,
+        openBrowserOnStart: wizardAnswers.openBrowserOnStart,
+      };
+    } catch (error: any) {
+      // If wizard fails, continue with defaults
+      console.warn(
+        pc.yellow(`[nextpulse] warn: Wizard failed: ${error?.message || error}. Using defaults.`)
+      );
+    }
+  } else {
+    // Non-interactive: apply flags
+    if (options.overlayPosition) {
+      configOverrides.overlayPosition = options.overlayPosition;
+    }
+    if (options.openBrowser !== undefined) {
+      configOverrides.openBrowserOnStart = options.openBrowser;
+    } else if (options.noOpenBrowser !== undefined) {
+      configOverrides.openBrowserOnStart = false;
+    }
+  }
 
   if (options.dryRun) {
     console.log(pc.cyan("[nextpulse] Dry run mode - no changes will be written\n"));
@@ -28,16 +80,26 @@ export async function initCommand(options: InitOptions): Promise<void> {
   const routerType = await detectRouterType(appRoot);
   if (!routerType) {
     throw new Error(
-      "Could not detect Next.js app. No app/layout.tsx or pages/_app.tsx found."
+      `[nextpulse] error: Could not find a Next.js app. Please run \`nextpulse init\` from your Next.js project root or provide \`--app <appDir>\`.\n` +
+        `  Expected to find either:\n` +
+        `    - app/layout.tsx (App Router)\n` +
+        `    - pages/_app.tsx (Pages Router)`
     );
   }
 
-  console.log(pc.dim(`Detected ${routerType} router`));
+  console.log(pc.dim(`[nextpulse] info: Detected ${routerType} router`));
 
   // Find entry file
   const entryFile = await findEntryFile(appRoot, routerType);
   if (!entryFile) {
-    throw new Error(`Could not find entry file for ${routerType} router`);
+    const expectedPath =
+      routerType === "app"
+        ? path.join(appRoot, "app/layout.tsx") + " or " + path.join(appRoot, "app/layout.jsx")
+        : path.join(appRoot, "pages/_app.tsx") + " or " + path.join(appRoot, "pages/_app.jsx");
+    throw new Error(
+      `[nextpulse] error: Expected to find a ${routerType === "app" ? "layout.tsx" : "_app.tsx"} at ${expectedPath}.\n` +
+        `  Please check your app directory or pass \`--app\` to point to the correct location.`
+    );
   }
 
   if (options.revert) {
@@ -53,10 +115,22 @@ export async function initCommand(options: InitOptions): Promise<void> {
   });
 
   // 2. Generate API routes
-  generateApiRoutes(appRoot, routerType, {
+  const routeResults = generateApiRoutes(appRoot, routerType, {
     dryRun: options.dryRun,
     force: options.force,
   });
+
+  // Check for conflicts (skipped files without force)
+  const conflicts = routeResults.filter((r) => r.action === "skipped");
+  if (conflicts.length > 0 && !options.force) {
+    console.warn(
+      pc.yellow(
+        `[nextpulse] warn: Found ${conflicts.length} existing API route file(s) that would be overwritten:\n` +
+          conflicts.map((r) => `    - ${r.file}`).join("\n") +
+          `\n  Pass \`--force\` to overwrite these files, or manually remove them first.`
+      )
+    );
+  }
 
   // 3. Inject <NextPulse /> into entry file
   if (!options.dryRun) {
@@ -82,6 +156,20 @@ export async function initCommand(options: InitOptions): Promise<void> {
   // 5. Update dev script if requested
   if (options.withDevScript) {
     await updateDevScript(appRoot, options);
+  }
+
+  // 6. Write config file with user choices or defaults
+  if (!options.dryRun) {
+    const existingConfig = readConfig(appRoot);
+    const finalConfig = { ...existingConfig, ...configOverrides };
+    const configPath = path.join(appRoot, "nextpulse.config.json");
+    const configExists = await fileExists(configPath);
+
+    writeConfig(appRoot, finalConfig);
+
+    if (!configExists) {
+      console.log(pc.green(`[nextpulse] created ${configPath}`));
+    }
   }
 
   console.log(pc.green("\n[nextpulse] init complete"));
