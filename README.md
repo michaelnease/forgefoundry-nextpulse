@@ -1,5 +1,7 @@
 # NextPulse
 
+> **⚠️ Work in Progress**
+
 > **Developer diagnostics and monitoring for Next.js applications**
 
 NextPulse is a comprehensive development tool that provides real-time insights into your Next.js app's performance, runtime behavior, errors, and bundles. Get instant visibility into server components, server actions, fetch calls, errors, and more - all without impacting production.

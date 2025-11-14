@@ -34,6 +34,15 @@ function getDashboardHTML(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextPulse Dashboard</title>
   <style>
+    :root {
+      --np-bg: #F7F7F7;
+      --np-surface: #E4E4E4;
+      --np-border: #CFCFCF;
+      --np-text-dark: #2A2A2A;
+      --np-text: #4A4A4A;
+      --np-highlight: #DADADA;
+      --np-error: #D9534F;
+    }
     * {
       margin: 0;
       padding: 0;
@@ -41,17 +50,16 @@ function getDashboardHTML(): string {
     }
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      color: #e5e7eb;
+      background: var(--np-bg);
+      color: var(--np-text);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 20px;
     }
     .container {
       max-width: 1200px;
       width: 100%;
+      margin: 0 auto;
+      padding-top: 40px;
     }
     .header {
       text-align: center;
@@ -61,13 +69,10 @@ function getDashboardHTML(): string {
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--np-text-dark);
     }
     .header p {
-      color: #94a3b8;
+      color: var(--np-text);
       font-size: 14px;
     }
     .anvil-button {
@@ -78,16 +83,16 @@ function getDashboardHTML(): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #111827;
-      color: #E5E7EB;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      background-color: var(--np-surface);
+      color: var(--np-text-dark);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       margin: 0 auto 30px;
     }
     .anvil-button:hover {
       transform: scale(1.05);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
     }
     .anvil-button svg {
       width: 30px;
@@ -95,12 +100,12 @@ function getDashboardHTML(): string {
       display: block;
     }
     .panel {
-      background: rgba(0, 0, 0, 0.85);
+      background: var(--np-surface);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--np-border);
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       display: none;
     }
     .panel.visible {
@@ -110,12 +115,12 @@ function getDashboardHTML(): string {
       font-size: 18px;
       font-weight: 600;
       margin-bottom: 20px;
-      color: #fff;
+      color: var(--np-text-dark);
     }
     .metadata-item {
       margin-bottom: 16px;
       padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--np-border);
     }
     .metadata-item:last-child {
       border-bottom: none;
@@ -124,21 +129,21 @@ function getDashboardHTML(): string {
     }
     .metadata-label {
       font-size: 12px;
-      color: #94a3b8;
+      color: var(--np-text);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 4px;
     }
     .metadata-value {
       font-size: 16px;
-      color: #fff;
+      color: var(--np-text-dark);
       font-weight: 500;
     }
     .metadata-value.git-dirty {
-      color: #FF5E5E;
+      color: var(--np-error);
     }
     .metadata-value.git-clean {
-      color: #3CCF4E;
+      color: var(--np-text);
     }
     .status-icon {
       display: inline-block;
@@ -149,46 +154,46 @@ function getDashboardHTML(): string {
       vertical-align: middle;
     }
     .status-icon.dirty {
-      background-color: #FF5E5E;
+      background-color: var(--np-error);
     }
     .status-icon.clean {
-      background-color: #3CCF4E;
+      background-color: var(--np-text);
     }
     .error {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(217, 83, 79, 0.1);
+      border: 1px solid rgba(217, 83, 79, 0.3);
       border-radius: 8px;
       padding: 16px;
-      color: #fca5a5;
+      color: var(--np-error);
       margin-bottom: 20px;
     }
     .loading {
       text-align: center;
-      color: #94a3b8;
+      color: var(--np-text);
       padding: 40px;
     }
     .tabs {
       display: flex;
       gap: 8px;
       margin-bottom: 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--np-border);
     }
     .tab {
       padding: 8px 16px;
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: var(--np-text);
       cursor: pointer;
       font-size: 14px;
       border-bottom: 2px solid transparent;
       transition: all 0.2s;
     }
     .tab:hover {
-      color: #e5e7eb;
+      color: var(--np-text-dark);
     }
     .tab.active {
-      color: #60a5fa;
-      border-bottom-color: #60a5fa;
+      color: var(--np-text-dark);
+      border-bottom-color: var(--np-text-dark);
     }
     .tab-content {
       display: none;
@@ -204,19 +209,19 @@ function getDashboardHTML(): string {
       gap: 16px;
       margin-bottom: 20px;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--np-highlight);
       border-radius: 8px;
     }
     .routes-summary-item {
       font-size: 14px;
     }
     .routes-summary-label {
-      color: #94a3b8;
+      color: var(--np-text);
       font-size: 12px;
       margin-bottom: 4px;
     }
     .routes-summary-value {
-      color: #fff;
+      color: var(--np-text-dark);
       font-weight: 600;
     }
     .routes-list {
@@ -226,29 +231,29 @@ function getDashboardHTML(): string {
     .route-item {
       padding: 12px;
       margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--np-highlight);
       border-radius: 6px;
       border-left: 3px solid transparent;
       cursor: pointer;
       transition: all 0.2s;
     }
     .route-item:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--np-surface);
     }
     .route-item.selected {
-      border-left-color: #60a5fa;
-      background: rgba(96, 165, 250, 0.1);
+      border-left-color: var(--np-text-dark);
+      background: var(--np-surface);
     }
     .route-path {
       font-family: 'Monaco', 'Courier New', monospace;
       font-size: 14px;
-      color: #60a5fa;
+      color: var(--np-text-dark);
       margin-bottom: 4px;
     }
     .route-file {
       font-family: 'Monaco', 'Courier New', monospace;
       font-size: 12px;
-      color: #94a3b8;
+      color: var(--np-text);
     }
     .route-badge {
       display: inline-block;
@@ -260,33 +265,33 @@ function getDashboardHTML(): string {
       text-transform: uppercase;
     }
     .route-badge.page {
-      background: rgba(34, 197, 94, 0.2);
-      color: #22c55e;
+      background: var(--np-highlight);
+      color: var(--np-text-dark);
     }
     .route-badge.layout {
-      background: rgba(168, 85, 247, 0.2);
-      color: #a855f7;
+      background: var(--np-highlight);
+      color: var(--np-text-dark);
     }
     .route-badge.apiRoute {
-      background: rgba(239, 68, 68, 0.2);
-      color: #ef4444;
+      background: rgba(217, 83, 79, 0.2);
+      color: var(--np-error);
     }
     .route-badge.routeHandler {
-      background: rgba(251, 191, 36, 0.2);
-      color: #fbbf24;
+      background: var(--np-highlight);
+      color: var(--np-text-dark);
     }
     .route-badge.loading {
-      background: rgba(59, 130, 246, 0.2);
-      color: #3b82f6;
+      background: var(--np-highlight);
+      color: var(--np-text-dark);
     }
     .route-badge.error {
-      background: rgba(239, 68, 68, 0.2);
-      color: #ef4444;
+      background: rgba(217, 83, 79, 0.2);
+      color: var(--np-error);
     }
     .route-details {
       margin-top: 20px;
       padding: 16px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--np-highlight);
       border-radius: 8px;
       display: none;
     }
@@ -302,7 +307,7 @@ function getDashboardHTML(): string {
     }
     .route-tree-segment {
       padding: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--np-highlight);
       border-radius: 4px;
       margin-bottom: 4px;
     }
@@ -640,12 +645,12 @@ function getDashboardHTML(): string {
       \`;
       
       if (routes.appRouterTree && routes.appRoutes.length > 0) {
-        html += '<h3 style="margin-bottom: 12px; font-size: 14px; color: #94a3b8;">App Router Tree</h3>';
+        html += '<h3 style="margin-bottom: 12px; font-size: 14px; color: var(--np-text);">App Router Tree</h3>';
         html += renderAppRouterTree(routes.appRouterTree, routes.appRoutes);
       }
       
       if (routes.appRoutes.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">App Router Routes</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">App Router Routes</h3>';
         html += '<div class="routes-list">';
         routes.appRoutes.forEach(route => {
           html += renderRouteItem(route);
@@ -654,7 +659,7 @@ function getDashboardHTML(): string {
       }
       
       if (routes.pagesRoutes.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Pages Router Routes</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Pages Router Routes</h3>';
         html += '<div class="routes-list">';
         routes.pagesRoutes.forEach(route => {
           html += renderRouteItem(route);
@@ -663,7 +668,7 @@ function getDashboardHTML(): string {
       }
       
       if (appCount === 0 && pagesCount === 0) {
-        html += '<div style="text-align: center; color: #94a3b8; padding: 40px;">No routes found</div>';
+        html += '<div style="text-align: center; color: var(--np-text); padding: 40px;">No routes found</div>';
       }
       
       routesContent.innerHTML = html;
@@ -688,16 +693,16 @@ function getDashboardHTML(): string {
     
     function renderTreeNode(node, allRoutes) {
       const icons = [];
-      if (node.hasPage) icons.push('<span class="route-tree-icon" style="background: rgba(34, 197, 94, 0.2); color: #22c55e;" title="Page">P</span>');
-      if (node.hasLayout) icons.push('<span class="route-tree-icon" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;" title="Layout">L</span>');
-      if (node.hasLoading) icons.push('<span class="route-tree-icon" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;" title="Loading">⏳</span>');
-      if (node.hasError) icons.push('<span class="route-tree-icon" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;" title="Error">E</span>');
-      if (node.hasRouteHandler) icons.push('<span class="route-tree-icon" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;" title="Route Handler">R</span>');
+      if (node.hasPage) icons.push('<span class="route-tree-icon" style="background: var(--np-highlight); color: var(--np-text-dark);" title="Page">P</span>');
+      if (node.hasLayout) icons.push('<span class="route-tree-icon" style="background: var(--np-highlight); color: var(--np-text-dark);" title="Layout">L</span>');
+      if (node.hasLoading) icons.push('<span class="route-tree-icon" style="background: var(--np-highlight); color: var(--np-text-dark);" title="Loading">⏳</span>');
+      if (node.hasError) icons.push('<span class="route-tree-icon" style="background: rgba(217, 83, 79, 0.2); color: var(--np-error);" title="Error">E</span>');
+      if (node.hasRouteHandler) icons.push('<span class="route-tree-icon" style="background: var(--np-highlight); color: var(--np-text-dark);" title="Route Handler">R</span>');
       
       let html = '<li class="route-tree-item">';
       html += \`<div class="route-tree-segment">
         <strong>\${escapeHtml(node.segment || '/')}</strong>
-        <span style="color: #94a3b8; margin-left: 8px;">\${escapeHtml(node.path)}</span>
+        <span style="color: var(--np-text); margin-left: 8px;">\${escapeHtml(node.path)}</span>
         \${icons.length > 0 ? '<span class="route-tree-icons">' + icons.join('') + '</span>' : ''}
       </div>\`;
       
@@ -808,18 +813,18 @@ function getDashboardHTML(): string {
         \`;
         
         if (activeSession.fetches.length > 0) {
-          html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Fetches</h3>';
+          html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Fetches</h3>';
           html += '<div class="routes-list">';
           activeSession.fetches.forEach(fetch => {
-            const statusColor = fetch.statusCode >= 200 && fetch.statusCode < 300 ? '#22c55e' : fetch.statusCode >= 400 ? '#ef4444' : '#94a3b8';
+            const statusColor = fetch.statusCode >= 200 && fetch.statusCode < 300 ? 'var(--np-text-dark)' : fetch.statusCode >= 400 ? 'var(--np-error)' : 'var(--np-text)';
             html += \`
               <div class="route-item">
                 <div class="route-path">
                   <span style="color: \${statusColor};">\${escapeHtml(fetch.method)} \${fetch.statusCode || '...'}</span>
-                  <span style="color: #94a3b8; margin-left: 8px;">\${fetch.durationMs}ms</span>
+                  <span style="color: var(--np-text); margin-left: 8px;">\${fetch.durationMs}ms</span>
                 </div>
                 <div class="route-file">\${escapeHtml(fetch.url)}</div>
-                <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                <div style="font-size: 10px; color: var(--np-text); margin-top: 4px;">
                   \${fetch.origin} | \${fetch.cacheResult || 'unknown'} cache
                 </div>
               </div>
@@ -829,29 +834,29 @@ function getDashboardHTML(): string {
         }
         
         if (activeSession.actions.length > 0) {
-          html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Server Actions</h3>';
+          html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Server Actions</h3>';
           html += '<div class="routes-list">';
           activeSession.actions.forEach(action => {
-            const statusColor = action.status === 'success' ? '#22c55e' : '#ef4444';
+            const statusColor = action.status === 'success' ? 'var(--np-text-dark)' : 'var(--np-error)';
             html += \`
               <div class="route-item">
                 <div class="route-path">
                   <span style="color: \${statusColor};">\${escapeHtml(action.name)}</span>
-                  <span style="color: #94a3b8; margin-left: 8px;">\${action.executionTimeMs}ms</span>
+                  <span style="color: var(--np-text); margin-left: 8px;">\${action.executionTimeMs}ms</span>
                 </div>
                 \${action.file ? \`<div class="route-file">\${escapeHtml(action.file)}</div>\` : ''}
-                \${action.errorMessage ? \`<div style="font-size: 10px; color: #ef4444; margin-top: 4px;">\${escapeHtml(action.errorMessage)}</div>\` : ''}
+                \${action.errorMessage ? \`<div style="font-size: 10px; color: var(--np-error); margin-top: 4px;">\${escapeHtml(action.errorMessage)}</div>\` : ''}
               </div>
             \`;
           });
           html += '</div>';
         }
       } else {
-        html += '<div style="text-align: center; color: #94a3b8; padding: 40px;">No active session</div>';
+        html += '<div style="text-align: center; color: var(--np-text); padding: 40px;">No active session</div>';
       }
       
       if (snapshot.sessions.length > 1) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Recent Sessions</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Recent Sessions</h3>';
         html += '<div class="routes-list">';
         snapshot.sessions.slice(0, 10).forEach(session => {
           if (session.id === snapshot.activeSessionId) return;
@@ -861,7 +866,7 @@ function getDashboardHTML(): string {
           html += \`
             <div class="route-item">
               <div class="route-path">\${escapeHtml(session.route)}</div>
-              <div style="font-size: 10px; color: #94a3b8;">
+              <div style="font-size: 10px; color: var(--np-text);">
                 \${duration} | \${session.fetches.length} fetches | \${session.actions.length} actions
               </div>
             </div>
@@ -892,7 +897,7 @@ function getDashboardHTML(): string {
         : null;
       
       if (!activeSession) {
-        performanceContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No active session</div>';
+        performanceContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">No active session</div>';
         return;
       }
       
@@ -925,16 +930,16 @@ function getDashboardHTML(): string {
           </div>
           <div class="routes-summary-item">
             <div class="routes-summary-label">Waterfalls</div>
-            <div class="routes-summary-value" style="color: \${waterfalls.length > 0 ? '#ef4444' : '#22c55e'}">\${waterfalls.length}</div>
+            <div class="routes-summary-value" style="color: \${waterfalls.length > 0 ? 'var(--np-error)' : 'var(--np-text-dark)'}">\${waterfalls.length}</div>
           </div>
         </div>
       \`;
       
       if (waterfalls.length > 0) {
-        html += '<div style="margin-top: 20px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; margin-bottom: 20px;">';
-        html += '<strong style="color: #ef4444;">⚠ Waterfalls Detected</strong>';
+        html += '<div style="margin-top: 20px; padding: 12px; background: rgba(217, 83, 79, 0.1); border: 1px solid rgba(217, 83, 79, 0.3); border-radius: 8px; margin-bottom: 20px;">';
+        html += '<strong style="color: var(--np-error);">⚠ Waterfalls Detected</strong>';
         waterfalls.forEach((waterfall, idx) => {
-          html += \`<div style="margin-top: 8px; font-size: 12px; color: #fca5a5;">
+          html += \`<div style="margin-top: 8px; font-size: 12px; color: var(--np-error);">
             \${waterfall.type.toUpperCase()} waterfall: \${waterfall.events.length} serial operations, \${(waterfall.totalDuration / 1000).toFixed(2)}s total
           </div>\`;
         });
@@ -942,17 +947,17 @@ function getDashboardHTML(): string {
       }
       
       if (timeline.length > 0 && sessionDuration > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Timeline</h3>';
-        html += '<div style="position: relative; height: \${Math.max(200, timeline.length * 30)}px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; overflow-x: auto;">';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Timeline</h3>';
+        html += '<div style="position: relative; height: \${Math.max(200, timeline.length * 30)}px; background: var(--np-highlight); border-radius: 8px; padding: 12px; overflow-x: auto;">';
         
-        // Create timeline rows
+        // Create timeline rows - use grayscale colors
         const eventTypes = ['rsc', 'suspense', 'streaming', 'fetch', 'action'];
         const colors = {
-          rsc: '#4F46E5',
-          suspense: '#10B981',
-          streaming: '#F59E0B',
-          fetch: '#3B82F6',
-          action: '#EF4444',
+          rsc: '#6B6B6B',
+          suspense: '#8B8B8B',
+          streaming: '#7B7B7B',
+          fetch: '#5B5B5B',
+          action: 'var(--np-error)',
         };
         
         eventTypes.forEach((type) => {
@@ -960,8 +965,8 @@ function getDashboardHTML(): string {
           if (events.length === 0) return;
           
           html += \`<div style="margin-bottom: 8px;">
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase;">\${type}</div>
-            <div style="position: relative; height: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+            <div style="font-size: 11px; color: var(--np-text); margin-bottom: 4px; text-transform: uppercase;">\${type}</div>
+            <div style="position: relative; height: 20px; background: var(--np-highlight); border-radius: 4px;">
           \`;
           
           events.forEach((event) => {
@@ -986,7 +991,7 @@ function getDashboardHTML(): string {
         
         html += '</div>';
       } else {
-        html += '<div style="text-align: center; color: #94a3b8; padding: 40px;">No timeline data available</div>';
+        html += '<div style="text-align: center; color: var(--np-text); padding: 40px;">No timeline data available</div>';
       }
       
       performanceContent.innerHTML = html;
@@ -997,7 +1002,7 @@ function getDashboardHTML(): string {
         const response = await fetch('/api/bundles');
         if (!response.ok) {
           if (response.status === 404) {
-            bundlesContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No build output found. Run <code>next build</code> first.</div>';
+            bundlesContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">No build output found. Run <code>next build</code> first.</div>';
             return;
           }
           throw new Error('Failed to load bundle data');
@@ -1019,7 +1024,7 @@ function getDashboardHTML(): string {
     
     function renderBundles(data) {
       if (!data) {
-        bundlesContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No bundle data available</div>';
+        bundlesContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">No bundle data available</div>';
         return;
       }
       
@@ -1050,18 +1055,18 @@ function getDashboardHTML(): string {
       
       // Largest chunks
       if (largestChunks.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Largest Chunks</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Largest Chunks</h3>';
         html += '<div class="routes-list">';
         largestChunks.forEach(chunk => {
           const isLarge = chunk.size > 500 * 1024; // 500KB
           html += \`
-            <div class="route-item" style="border-left: 3px solid \${isLarge ? '#ef4444' : '#22c55e'}">
+            <div class="route-item" style="border-left: 3px solid \${isLarge ? 'var(--np-error)' : 'var(--np-border)'}">
               <div class="route-path">
                 <span>\${escapeHtml(chunk.name)}</span>
-                <span style="color: #94a3b8; margin-left: 8px;">\${formatBytes(chunk.size)}</span>
-                \${chunk.gzipSize ? \`<span style="color: #94a3b8; margin-left: 8px;">(\${formatBytes(chunk.gzipSize)} gzip)</span>\` : ''}
+                <span style="color: var(--np-text); margin-left: 8px;">\${formatBytes(chunk.size)}</span>
+                \${chunk.gzipSize ? \`<span style="color: var(--np-text); margin-left: 8px;">(\${formatBytes(chunk.gzipSize)} gzip)</span>\` : ''}
               </div>
-              <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+              <div style="font-size: 10px; color: var(--np-text); margin-top: 4px;">
                 \${chunk.isEntry ? 'Entry' : ''} \${chunk.isDynamic ? 'Dynamic' : ''} \${chunk.isShared ? 'Shared' : ''}
               </div>
             </div>
@@ -1072,7 +1077,7 @@ function getDashboardHTML(): string {
       
       // Route mapping
       if (data.routeMapping && data.routeMapping.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Route Bundle Sizes</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Route Bundle Sizes</h3>';
         html += '<div class="routes-list">';
         data.routeMapping.forEach(route => {
           html += \`
@@ -1080,7 +1085,7 @@ function getDashboardHTML(): string {
               <div class="route-path">
                 <span>\${escapeHtml(route.route)}</span>
               </div>
-              <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+              <div style="font-size: 10px; color: var(--np-text); margin-top: 4px;">
                 Client: \${formatBytes(route.totalClientSize)} | Server: \${formatBytes(route.totalServerSize)} | Chunks: \${route.clientChunks.length + route.serverChunks.length}
               </div>
             </div>
@@ -1091,17 +1096,17 @@ function getDashboardHTML(): string {
       
       // Assets table (top 20)
       if (data.assets && data.assets.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Largest Assets</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Largest Assets</h3>';
         html += '<div class="routes-list">';
         largestAssets.forEach(asset => {
           html += \`
             <div class="route-item">
               <div class="route-path">
                 <span>\${escapeHtml(asset.name)}</span>
-                <span style="color: #94a3b8; margin-left: 8px;">\${formatBytes(asset.size)}</span>
-                \${asset.gzipSize ? \`<span style="color: #94a3b8; margin-left: 8px;">(\${formatBytes(asset.gzipSize)} gzip)</span>\` : ''}
+                <span style="color: var(--np-text); margin-left: 8px;">\${formatBytes(asset.size)}</span>
+                \${asset.gzipSize ? \`<span style="color: var(--np-text); margin-left: 8px;">(\${formatBytes(asset.gzipSize)} gzip)</span>\` : ''}
               </div>
-              <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+              <div style="font-size: 10px; color: var(--np-text); margin-top: 4px;">
                 \${asset.type} | \${asset.isClient ? 'Client' : ''} \${asset.isServer ? 'Server' : ''} \${asset.isShared ? 'Shared' : ''}
               </div>
             </div>
@@ -1137,7 +1142,7 @@ function getDashboardHTML(): string {
     
     function renderErrors(data) {
       if (!data) {
-        errorsContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No error data available</div>';
+        errorsContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">No error data available</div>';
         return;
       }
       
@@ -1154,11 +1159,11 @@ function getDashboardHTML(): string {
         <div class="routes-summary">
           <div class="routes-summary-item">
             <div class="routes-summary-label">Total Errors</div>
-            <div class="routes-summary-value" style="color: #ef4444;">\${errorCount}</div>
+            <div class="routes-summary-value" style="color: var(--np-error);">\${errorCount}</div>
           </div>
           <div class="routes-summary-item">
             <div class="routes-summary-label">Warnings</div>
-            <div class="routes-summary-value" style="color: #f59e0b;">\${warningCount}</div>
+            <div class="routes-summary-value" style="color: var(--np-text-dark);">\${warningCount}</div>
           </div>
           <div class="routes-summary-item">
             <div class="routes-summary-label">Info Logs</div>
@@ -1170,30 +1175,30 @@ function getDashboardHTML(): string {
           </div>
         </div>
         <div style="margin-top: 20px; display: flex; gap: 12px;">
-          <button onclick="clearErrors()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Clear All</button>
+          <button onclick="clearErrors()" style="padding: 8px 16px; background: var(--np-error); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Clear All</button>
         </div>
       \`;
       
       // Error list
       if (errors.length > 0) {
-        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Recent Errors</h3>';
+        html += '<h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Recent Errors</h3>';
         html += '<div class="routes-list">';
         errors.slice(0, 20).forEach((error, idx) => {
-          const severityColor = error.severity === 'error' ? '#ef4444' : error.severity === 'warning' ? '#f59e0b' : '#3b82f6';
+          const severityColor = error.severity === 'error' ? 'var(--np-error)' : error.severity === 'warning' ? 'var(--np-text-dark)' : 'var(--np-text)';
           html += \`
             <div class="route-item" style="border-left: 3px solid \${severityColor}; cursor: pointer;" onclick="toggleErrorDetails('\${error.id}')">
               <div class="route-path">
                 <span style="color: \${severityColor}; font-weight: 600;">\${error.severity.toUpperCase()}</span>
-                <span style="color: #94a3b8; margin-left: 8px;">\${formatTimeAgo(error.timestamp)}</span>
-                <span style="color: #94a3b8; margin-left: 8px;">\${escapeHtml(error.source)}</span>
+                <span style="color: var(--np-text); margin-left: 8px;">\${formatTimeAgo(error.timestamp)}</span>
+                <span style="color: var(--np-text); margin-left: 8px;">\${escapeHtml(error.source)}</span>
               </div>
-              <div style="font-size: 11px; color: #e2e8f0; margin-top: 4px;">
+              <div style="font-size: 11px; color: var(--np-text-dark); margin-top: 4px;">
                 \${escapeHtml(error.route || 'unknown route')}
               </div>
-              <div style="font-size: 11px; color: #cbd5e1; margin-top: 4px;">
+              <div style="font-size: 11px; color: var(--np-text); margin-top: 4px;">
                 \${escapeHtml(error.message)}
               </div>
-              <div id="error-details-\${error.id}" style="display: none; margin-top: 8px; padding: 8px; background: rgba(0, 0, 0, 0.3); border-radius: 4px; font-size: 10px; font-family: monospace; white-space: pre-wrap; color: #94a3b8;">
+              <div id="error-details-\${error.id}" style="display: none; margin-top: 8px; padding: 8px; background: var(--np-highlight); border-radius: 4px; font-size: 10px; font-family: monospace; white-space: pre-wrap; color: var(--np-text);">
                 \${error.stack ? escapeHtml(error.stack) : 'No stack trace available'}
                 \${error.meta ? '<br><br>Meta: ' + escapeHtml(JSON.stringify(error.meta, null, 2)) : ''}
               </div>
@@ -1202,7 +1207,7 @@ function getDashboardHTML(): string {
         });
         html += '</div>';
       } else {
-        html += '<div style="text-align: center; color: #94a3b8; padding: 40px;">No errors recorded</div>';
+        html += '<div style="text-align: center; color: var(--np-text); padding: 40px;">No errors recorded</div>';
       }
       
       errorsContent.innerHTML = html;
@@ -1241,7 +1246,7 @@ function getDashboardHTML(): string {
     
     function renderSnapshot(snapshot) {
       if (!snapshot) {
-        snapshotContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px;">No snapshot data available</div>';
+        snapshotContent.innerHTML = '<div style="text-align: center; color: var(--np-text); padding: 40px;">No snapshot data available</div>';
         return;
       }
       
@@ -1255,10 +1260,10 @@ function getDashboardHTML(): string {
       
       let html = \`
         <div style="margin-bottom: 24px;">
-          <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+          <p style="color: var(--np-text); font-size: 14px; margin-bottom: 20px;">
             This is a complete diagnostic profile for AI analysis. Export the snapshot to share with AI assistants or for debugging.
           </p>
-          <button onclick="exportSnapshot()" style="padding: 12px 24px; background: #60a5fa; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+          <button onclick="exportSnapshot()" style="padding: 12px 24px; background: var(--np-text-dark); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
             Export Snapshot
           </button>
         </div>
@@ -1274,7 +1279,7 @@ function getDashboardHTML(): string {
           </div>
           <div class="routes-summary-item">
             <div class="routes-summary-label">Errors</div>
-            <div class="routes-summary-value" style="color: \${errorCount > 0 ? '#ef4444' : '#22c55e'}">\${errorCount}</div>
+            <div class="routes-summary-value" style="color: \${errorCount > 0 ? 'var(--np-error)' : 'var(--np-text-dark)'}">\${errorCount}</div>
           </div>
           <div class="routes-summary-item">
             <div class="routes-summary-label">Sessions</div>
@@ -1290,8 +1295,8 @@ function getDashboardHTML(): string {
           </div>
         </div>
         
-        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: #94a3b8;">Snapshot Preview</h3>
-        <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #cbd5e1;">
+        <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--np-text);">Snapshot Preview</h3>
+        <div style="background: var(--np-highlight); border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 11px; color: var(--np-text);">
           <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">\${escapeHtml(JSON.stringify(snapshot, null, 2).substring(0, 2000))}...</pre>
         </div>
       \`;
@@ -1555,24 +1560,11 @@ async function handleRequest(
 }
 
 /**
- * Open browser (cross-platform)
+ * Try to open browser silently (no warnings on failure)
  */
-function openBrowser(url: string): void {
-  const platform = process.platform;
-
-  let command: string;
-  if (platform === "win32") {
-    command = `start ${url}`;
-  } else if (platform === "darwin") {
-    command = `open ${url}`;
-  } else {
-    command = `xdg-open ${url}`;
-  }
-
-  exec(command, (error: Error | null) => {
-    if (error) {
-      console.log(pc.yellow(`[nextpulse] Could not open browser: ${error.message}`));
-    }
+function tryOpenBrowser(url: string): void {
+  exec(`xdg-open "${url}"`, (err) => {
+    // Completely ignore all errors. Do not log anything.
   });
 }
 
@@ -1623,7 +1615,7 @@ export function startServer(options: ServerOptions = {}): Promise<void> {
       console.log(pc.dim(`[nextpulse] Project root: ${resolvedRoot}`));
 
       if (shouldOpen) {
-        openBrowser(url);
+        tryOpenBrowser(url);
       }
 
       promiseResolve();
