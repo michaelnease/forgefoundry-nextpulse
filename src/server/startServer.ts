@@ -346,6 +346,8 @@ function getDashboardHTML(): string {
           <button class="tab active" data-tab="metadata">Metadata</button>
           <button class="tab" data-tab="routes">Routes</button>
           <button class="tab" data-tab="runtime">Runtime</button>
+          <button class="tab" data-tab="performance">Performance</button>
+          <button class="tab" data-tab="bundles">Bundles</button>
         </div>
         <div class="tab-content active" id="tab-metadata">
           <h2>Project Metadata</h2>

@@ -25,6 +25,8 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
   const [runtimeData, setRuntimeData] = useState<RuntimeSnapshot | null>(null);
   const [showActivity, setShowActivity] = useState(false);
   const [showPerf, setShowPerf] = useState(false);
+  const [showBundles, setShowBundles] = useState(false);
+  const [bundlesData, setBundlesData] = useState<any>(null);
 
   // Fetch runtime data in development
   useEffect(() => {
@@ -49,7 +51,26 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
     fetchRuntime();
     const interval = setInterval(fetchRuntime, 2000); // Poll every 2 seconds
 
-    return () => clearInterval(interval);
+    // Fetch bundle data
+    const fetchBundles = async () => {
+      try {
+        const response = await fetch("/api/nextpulse/bundles");
+        if (response.ok) {
+          const data = await response.json();
+          setBundlesData(data);
+        }
+      } catch {
+        // Silently fail - API route may not exist yet
+      }
+    };
+
+    fetchBundles();
+    const bundlesInterval = setInterval(fetchBundles, 5000); // Poll every 5 seconds
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(bundlesInterval);
+    };
   }, []);
 
   // Position the panel near the button (60px offset to account for button + spacing)
@@ -212,6 +233,53 @@ export function Panel({ metadata, position = "bottomRight" }: PanelProps) {
           )}
         </div>
       )}
+
+      {/* Bundles Section */}
+      {process.env.NODE_ENV === "development" && bundlesData && (
+        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
+          <button
+            onClick={() => setShowBundles(!showBundles)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#60a5fa",
+              cursor: "pointer",
+              fontSize: "11px",
+              padding: "4px 0",
+              textAlign: "left",
+              width: "100%",
+            }}
+          >
+            {showBundles ? "▼" : "▶"} Bundles
+          </button>
+          {showBundles && (
+            <div style={{ marginTop: "8px", fontSize: "10px" }}>
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Client:</strong> {formatBytes(bundlesData.totalClientSize || 0)}
+              </div>
+              <div style={{ marginBottom: "6px" }}>
+                <strong>Server:</strong> {formatBytes(bundlesData.totalServerSize || 0)}
+              </div>
+              {bundlesData.chunks && bundlesData.chunks.length > 0 && (
+                <div style={{ marginBottom: "6px" }}>
+                  <strong>Largest Chunk:</strong>{" "}
+                  {formatBytes(
+                    Math.max(...bundlesData.chunks.map((c: any) => c.size || 0))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
